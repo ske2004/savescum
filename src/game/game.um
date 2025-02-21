@@ -133,6 +133,13 @@ type ChumState = struct {
   toggleActiveWater:  bool
 }
 
+type Camera = struct {
+  pos: th::Vf2
+  scale: real
+}
+
+
+
 var (
   time: real
   coyoteTime: int
@@ -161,8 +168,7 @@ var (
   sceneId*: int
   world*: world::World
   pal*: ChumState
-  camera*: th::Vf2
-  cameraScale*: real
+  camera: Camera
   toggleActive: bool
   toggleActiveVal: real
   resetPoint: th::Vf2
@@ -236,38 +242,33 @@ fn getCameraTargetRect(): rect::Rect {
   return util::rectKeepInBounds(cameraRect, guide)
 }
 
-type CameraProperties = struct {
-  pos: th::Vf2
-  scale: real
-}
-
-fn getCameraProperties*(): CameraProperties {
+fn getTargetCamera*(): Camera {
   targetRect := getCameraTargetRect()
-  return CameraProperties{targetRect.getPos(), util::min(global::screen.w/targetRect.w, global::screen.h/targetRect.h)}
+  return Camera{targetRect.getPos(), util::min(global::screen.w/targetRect.w, global::screen.h/targetRect.h)}
 }
 
 fn cameraControl() {
-  props := getCameraProperties()
+  props := getTargetCamera()
 
-  camera = rerp::iVf2(camera, props.pos, updateStep*10.0)
-  cameraScale = rerp::iReal(cameraScale, props.scale, updateStep*10.0)
+  camera.pos   = rerp::iVf2(camera.pos, props.pos, updateStep*10.0)
+  camera.scale = rerp::iReal(camera.scale, props.scale, updateStep*10.0)
 }
 
-fn cameraOffsetPoint(p: th::Vf2): th::Vf2 {
-  p.x -= camera.x
-  p.y -= camera.y
-  p.x *= cameraScale
-  p.y *= cameraScale
+fn (camera: ^Camera) mapPoint(p: th::Vf2): th::Vf2 {
+  p.x -= camera.pos.x
+  p.y -= camera.pos.y
+  p.x *= camera.scale
+  p.y *= camera.scale
   return p
 }
 
-fn cameraOffsetRect(r: rect::Rect): rect::Rect {
-  r.x -= camera.x
-  r.y -= camera.y
-  r.x *= cameraScale
-  r.y *= cameraScale
-  r.w *= cameraScale
-  r.h *= cameraScale
+fn (camera: ^Camera) mapRect(r: rect::Rect): rect::Rect {
+  r.x -= camera.pos.x
+  r.y -= camera.pos.y
+  r.x *= camera.scale
+  r.y *= camera.scale
+  r.w *= camera.scale
+  r.h *= camera.scale
   return r
 }
 
@@ -552,7 +553,7 @@ fn _drawRectTangents(r: rect::Rect) {
   solids := entConstructCollidingSolids(&pal.ent)
 
   for i, solid in solids {
-    rec := cameraOffsetRect(solid.rect)
+    rec := camera.mapRect(solid.rect)
     switch solid.shape {
     case .block:
       canvas::drawRect(0x00FF0055, rec)
@@ -561,7 +562,7 @@ fn _drawRectTangents(r: rect::Rect) {
     case .rightUpSlope, .leftDownSlope:
       canvas::drawLine(0x00FF0055, th::Vf2{rec.x, rec.y}, th::Vf2{rec.x+rec.w, rec.y+rec.h}, 2)
     }
-    canvas::drawText(sprintf("%v", i), th::Vf2{rec.x, rec.y}, th::white, cameraScale)
+    canvas::drawText(sprintf("%v", i), th::Vf2{rec.x, rec.y}, th::white, camera.scale)
   }
 }
 
@@ -638,8 +639,7 @@ fn start*(worldData: world_data::WorldData): std::Err {
 
   pal.toggleActiveStatic = metaBoulders
   saves = []ChumState{}
-  camera = getCameraProperties().pos
-  cameraScale = getCameraProperties().scale
+  camera = getTargetCamera()
 
   if !hasPlayer {
     return std::error(1, "No player entity found")
@@ -709,7 +709,7 @@ fn drawEntityCustomRect(ent: ^Character, r: rect::Rect) {
     color = th::red
   }
 
-  canvas::drawRect(color, cameraOffsetRect(ent.rect))
+  canvas::drawRect(color, camera.mapRect(ent.rect))
 }
 
 cropBoulder        := rect::Rect{0, 0, 64, 128}
@@ -773,7 +773,7 @@ fn drawEntityObject*(name: str, tags: ^TagSet, rect: rect::Rect, scale: real): b
   } else if tags.isSet("controls") {
     imgObj.blit(cropControls, rect)
   } else if tags.isSet("Comment") {
-    defaultFont.draw(name, rect.getPos().addf(1*cameraScale), 0x000000FF, scale/2)
+    defaultFont.draw(name, rect.getPos().addf(1*camera.scale), 0x000000FF, scale/2)
     defaultFont.draw(name, rect.getPos(), 0xFFFFFFFF, scale/2)
   } else if tags.isSet("first_save") || tags.isSet("force_load") {
     // NOTHING
@@ -784,9 +784,9 @@ fn drawEntityObject*(name: str, tags: ^TagSet, rect: rect::Rect, scale: real): b
 }
 
 fn drawEntity(ent: ^Character) {
-  destRect := util::rectShrink(cameraOffsetRect(ent.rect), -1*cameraScale)
+  destRect := util::rectShrink(camera.mapRect(ent.rect), -1*camera.scale)
 
-  if !drawEntityObject(ent.name, &ent.tags, destRect, cameraScale) {
+  if !drawEntityObject(ent.name, &ent.tags, destRect, camera.scale) {
     drawEntityCustomRect(ent, ent.rect)
   }
 }
@@ -808,15 +808,15 @@ fn drawChumState(state: int, chum: ^ChumState, tint: uint32) {
     offs -= 12.5
   }
 
-  chumDestRect := cameraOffsetRect({at.x+offs, at.y-29, chumFaceRect.w/2, chumFaceRect.h/2})
-  chumMouthDestRect := cameraOffsetRect({at.x+offs+41-21, at.y-29+52-22.25, 22/2, -7.05/2})
+  chumDestRect := camera.mapRect({at.x+offs, at.y-29, chumFaceRect.w/2, chumFaceRect.h/2})
+  chumMouthDestRect := camera.mapRect({at.x+offs+41-21, at.y-29+52-22.25, 22/2, -7.05/2})
 
   if chum.dir == 0 {
     // Mirror.
     chumDestRect.x += chumDestRect.w
     chumDestRect.w *= -1
 
-    chumMouthDestRect.x += chumMouthDestRect.w+1.5*cameraScale
+    chumMouthDestRect.x += chumMouthDestRect.w+1.5*camera.scale
   }
 
   chumMouthDestRect.x -= 0.5
@@ -876,9 +876,9 @@ fn drawEntities() {
 
 fn drawEntityDebugRects() {
   for i, entity in entities {
-    canvas::drawRect(color::alpha(th::blue, 0.4), cameraOffsetRect(entity.rect))
+    canvas::drawRect(color::alpha(th::blue, 0.4), camera.mapRect(entity.rect))
   }
-  canvas::drawRect(color::alpha(th::blue, 0.4), cameraOffsetRect(pal.ent.rect))
+  canvas::drawRect(color::alpha(th::blue, 0.4), camera.mapRect(pal.ent.rect))
 }
 
 fn canActivateLever(): bool {
@@ -1129,7 +1129,7 @@ fn update*() {
 
 fn drawGuideRects() {
   for i, guide in guides {
-    canvas::drawRectLines(th::yellow, cameraOffsetRect(guide))
+    canvas::drawRectLines(th::yellow, camera.mapRect(guide))
   }
 }
 
@@ -1140,7 +1140,7 @@ fn drawOutline(color: uint32, rect: rect::Rect) {
 fn drawOutlines() {
   radiusPulsing := 3
 
-  renderTiles := world.collectLayerRenderTiles(cameraOffsetPoint({0, 0}), 0, cameraScale)
+  renderTiles := world.collectLayerRenderTiles(camera.mapPoint({0, 0}), 0, camera.scale)
 
   for i, renderTile in renderTiles {
     distance := renderTile.rect.getPos().distanceTo(pal.ent.rect.getPos())
@@ -1159,22 +1159,22 @@ fn drawOutlines() {
     darkyellow := color::hsv(0.15, proximityMultiplier, util::max(proximityMultiplier, 0.05)/2.0)
 
     if renderTile.id == 29 {
-      drawOutline(green, cameraOffsetRect(util::rectShrink(renderTile.rect, -3)))
+      drawOutline(green, camera.mapRect(util::rectShrink(renderTile.rect, -3)))
     }
     if (renderTile.id == 30) || (renderTile.id == 31) {
       radius := radiusPulsing
-      drawOutline(0x000000FF, cameraOffsetRect(util::rectShrink(renderTile.rect, -radius-1)))
+      drawOutline(0x000000FF, camera.mapRect(util::rectShrink(renderTile.rect, -radius-1)))
       if renderTile.id == (toggleActive ? 31 : 30) {
-        drawOutline(darkyellow, cameraOffsetRect(util::rectShrink(renderTile.rect, -radius)))
+        drawOutline(darkyellow, camera.mapRect(util::rectShrink(renderTile.rect, -radius)))
       } else {
-        drawOutline(yellow, cameraOffsetRect(util::rectShrink(renderTile.rect, -radius)))
+        drawOutline(yellow, camera.mapRect(util::rectShrink(renderTile.rect, -radius)))
       }
     }
   }
 }
 
 fn drawOverlays() {
-  renderTiles := world.collectLayerRenderTiles(cameraOffsetPoint({0, 0}), 0, cameraScale)
+  renderTiles := world.collectLayerRenderTiles(camera.mapPoint({0, 0}), 0, camera.scale)
 
   alpha := color::alpha(0xFFFFFF00, toggleActiveVal)
   alpha2 := color::alpha(0xFFFFFF00, 1-toggleActiveVal)
@@ -1182,11 +1182,11 @@ fn drawOverlays() {
   for i, renderTile in renderTiles {
     switch renderTile.id {
       case 30:
-        world.tileset.i.blit(world.tileset.rect(30), cameraOffsetRect(renderTile.rect))
-        world.tileset.i.blit(world.tileset.rect(31), cameraOffsetRect(renderTile.rect), alpha)
+        world.tileset.i.blit(world.tileset.rect(30), camera.mapRect(renderTile.rect))
+        world.tileset.i.blit(world.tileset.rect(31), camera.mapRect(renderTile.rect), alpha)
       case 31:
-        world.tileset.i.blit(world.tileset.rect(30), cameraOffsetRect(renderTile.rect))
-        world.tileset.i.blit(world.tileset.rect(31), cameraOffsetRect(renderTile.rect), alpha2)
+        world.tileset.i.blit(world.tileset.rect(30), camera.mapRect(renderTile.rect))
+        world.tileset.i.blit(world.tileset.rect(31), camera.mapRect(renderTile.rect), alpha2)
     }
   }
 }
@@ -1199,19 +1199,19 @@ fn drawObjectsAt(state: ChumState) {
         power *= -1
       }
       boulderTargetRect := entity.originalRect.shift(th::Vf2{0, -(entity.originalRect.h+32)*power})
-      imgObj.blit(cropBoulder, cameraOffsetRect(boulderTargetRect), 0, 0xFFFFFF22)
+      imgObj.blit(cropBoulder, camera.mapRect(boulderTargetRect), 0, 0xFFFFFF22)
     }
   }
 }
 
 
 fn drawRayCast() {
-  origin := cameraOffsetPoint(pal.ent.rect.center())
+  origin := camera.mapPoint(pal.ent.rect.center())
   direction := input::getMousePos().sub(origin)
 
 
   worldOrigin := pal.ent.rect.center()
-  worldDirection := direction.divf(cameraScale*100)
+  worldDirection := direction.divf(camera.scale*100)
 
   color := 0x0000FFFF
 
@@ -1236,12 +1236,11 @@ fn drawRayCast() {
 fn draw*() {
   // RENDER BG //
   input::gamepad().rumble(rumbling*5, rumbling*5)
-  bgCam := rect::Rect{camera.x, camera.y, global::screen.w/cameraScale, global::screen.h/cameraScale}
+  bgCam := rect::Rect{camera.pos.x, camera.pos.y, global::screen.w/camera.scale, global::screen.h/camera.scale}
   bgCam.x /= 2
   bgCam.y /= 2
   rumbling = rerp::iReal(rumbling, 0, th::delta/100.0)
-  oldScale := cameraScale
-  oldPos := camera
+  oldCamera := camera
 
   if global::plainBiscuit {
     canvas::drawRect(0x777777FF, global::screen)
@@ -1250,9 +1249,9 @@ fn draw*() {
   }
 
   // RENDER WORLD //
-  world.drawLayer(cameraOffsetPoint({0, 0}), -1, cameraScale)
+  world.drawLayer(camera.mapPoint({0, 0}), -1, camera.scale)
   drawOutlines()
-  world.drawLayer(cameraOffsetPoint({0, 0}), 0, cameraScale)
+  world.drawLayer(camera.mapPoint({0, 0}), 0, camera.scale)
   drawOverlays()
   drawEntities()
 
@@ -1265,17 +1264,16 @@ fn draw*() {
     drawObjectsAt(state)
   }
 
-  world.drawLayer(cameraOffsetPoint({0, 0}), 1, cameraScale)
+  world.drawLayer(camera.mapPoint({0, 0}), 1, camera.scale)
 
   // DEBUG OVERLAYS //
   if showDebug {
     _drawRectTangents(pal.ent.rect)
     drawGuideRects()
-    canvas::drawRectLines(th::green, cameraOffsetRect(getCameraTargetRect()))
+    canvas::drawRectLines(th::green, camera.mapRect(getCameraTargetRect()))
     drawEntityDebugRects()
     drawRayCast()
   }
 
-  cameraScale = oldScale
-  camera = oldPos
+  camera = oldCamera
 }
