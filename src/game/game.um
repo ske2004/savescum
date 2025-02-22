@@ -23,20 +23,16 @@ import (
   "controls.um"
 )
 
-type ShapeType = enum {
-  none
-  block
-  leftUpSlope
-  rightUpSlope
-  leftDownSlope
-  rightDownSlope
-}
-
-// TPS 250
-const updateStep = 1/250.0
-const updateStepMs* = 4
-
 type (
+  ShapeType = enum {
+    none
+    block
+    leftUpSlope
+    rightUpSlope
+    leftDownSlope
+    rightDownSlope
+  }
+
   Shape* = struct {
     rect: rect::Rect
     shape: ShapeType
@@ -61,6 +57,91 @@ type (
     onGround: bool
     onSlope: bool
   }
+
+  PAL = struct {
+    time:               real
+    dir:                int
+    rotTime:            real
+    walkTime:           real
+    loadTime:           real
+    visRect:            rect::Rect
+    ent:                Character
+    toggleActiveStatic: bool
+    toggleActiveWater:  bool
+  }
+
+  Camera = struct {
+    pos: th::Vf2
+    scale: real
+  }
+)
+
+// TPS 250
+const (
+  updateStep = 1/250.0
+  updateStepMs* = 4
+) 
+
+cropBoulder        := rect::Rect{0, 0, 64, 128}
+cropLeverOn        := rect::Rect{64, 64, 64, 64}
+cropLeverOff       := rect::Rect{64, 0, 64, 64}
+cropLeverStaticOn  := rect::Rect{256, 64, 64, 64}
+cropLeverStaticOff := rect::Rect{256, 0, 64, 64}
+cropLeverWaterOn   := rect::Rect{320, 128, 64, 64}
+cropLeverWaterOff  := rect::Rect{320, 192, 64, 64}
+cropControls       := rect::Rect{0, 128, 256, 256}
+
+palStateStand := 0
+palStateJump  := 1
+palStateFall  := 2
+palStandRect  := rect::Rect{128, 0, 128, 128}
+palFaceRect   := rect::Rect{0, 0, 128, 128}
+palMouthRect  := rect::Rect{41, 52, 22, 7}
+
+var (
+  time: real
+  coyoteTime: int
+  palFrown: bool = false
+  imgObj: image::Image
+  imgPAL: image::Image
+  defaultFont: font::Font
+  bgAudio: audio::Sound
+  palStep: audio::Sound
+  palJump: audio::Sound
+  palLand: audio::Sound
+  jitterDir: real
+  jitterTime: real
+  jitterCounter: int
+  metaBoulders: bool
+  wasOnGround: bool
+  previewingLoad: bool
+  stopPreview: bool
+
+  noSaveStack: bool
+  noSaveLoad: bool
+  insideStatic: bool
+  lockInput*: bool
+  guides: []rect::Rect
+  entities*: []Character
+  sceneId*: int
+  world*: world::World
+  pal*: PAL
+  camera: Camera
+  toggleActive: bool
+  toggleActiveVal: real
+  resetPoint: th::Vf2
+
+  saves: []PAL
+  bufferState: PAL
+  showDebug*: bool
+  lastUpdateTime: int = 0
+  frameSkips*: int
+
+  firstTime: bool = true
+
+  rumbling: real
+  controls: controls::Controls
+  exited*:  bool
 )
 
 fn (t: ^TagSet) set*(tag: str) {
@@ -120,71 +201,6 @@ fn initTagSetFromString*(s: str): TagSet {
 
   return tagSet
 }
-
-type ChumState = struct {
-  time:               real
-  dir:                int
-  rotTime:            real
-  walkTime:           real
-  loadTime:           real
-  visRect:            rect::Rect
-  ent:                Character
-  toggleActiveStatic: bool
-  toggleActiveWater:  bool
-}
-
-type Camera = struct {
-  pos: th::Vf2
-  scale: real
-}
-
-
-
-var (
-  time: real
-  coyoteTime: int
-  chumFrown: bool = false
-  imgObj: image::Image
-  imgChum: image::Image
-  defaultFont: font::Font
-  bgAudio: audio::Sound
-  palStep: audio::Sound
-  palJump: audio::Sound
-  palLand: audio::Sound
-  jitterDir: real
-  jitterTime: real
-  jitterCounter: int
-  metaBoulders: bool
-  wasOnGround: bool
-  previewingLoad: bool
-  stopPreview: bool
-
-  noSaveStack: bool
-  noSaveLoad: bool
-  insideStatic: bool
-  lockInput*: bool
-  guides: []rect::Rect
-  entities*: []Character
-  sceneId*: int
-  world*: world::World
-  pal*: ChumState
-  camera: Camera
-  toggleActive: bool
-  toggleActiveVal: real
-  resetPoint: th::Vf2
-
-  saves: []ChumState
-  bufferState: ChumState
-  showDebug*: bool
-  lastUpdateTime: int = 0
-  frameSkips*: int
-
-  firstTime: bool = true
-
-  rumbling: real
-  controls: controls::Controls
-  exited*:  bool
-)
 
 fn getCameraRect(): rect::Rect {
   return {pal.ent.rect.x+pal.ent.rect.w/2-global::screen.w/2, pal.ent.rect.y+pal.ent.rect.h/2-global::screen.h/2, global::screen.w, global::screen.h}
@@ -344,33 +360,6 @@ fn entPhysics(ent: ^Character) {
   ent.vel.x = 0
 }
 
-fn collCalcRectSnap(r, along: rect::Rect): th::Vf2 {
-  x_left := r.x + r.w - along.x
-  y_up := r.y + r.h - along.y
-
-  x_right := along.x + along.w - r.x
-  y_down := along.y + along.h - r.y
-
-  var (min_x: real; min_y: real)
-
-  if fabs(x_left) < fabs(x_right) {
-    min_x = -x_left
-  } else {
-    min_x = x_right
-  }
-
-  if fabs(y_up) < fabs(y_down) {
-    min_y = -y_up
-  } else {
-    min_y = y_down
-  }
-
-  if fabs(min_x) < fabs(min_y) {
-    return th::Vf2{min_x, 0}
-  }
-  return th::Vf2{0, min_y}
-}
-
 fn collSortShapesByProximity(shapes: ^[]Shape, along: th::Vf2) {
   sort(shapes^, |along| {
     distA := a.rect.center().distanceTo(along)
@@ -382,7 +371,7 @@ fn collSortShapesByProximity(shapes: ^[]Shape, along: th::Vf2) {
 fn entHandleShape(ent: ^Character, s: Shape) {
   // Not a valid collision (probably pushed back by other blocks?)
   r := s.rect
-  snap := collCalcRectSnap(ent.rect, r)
+  snap := util::rectSnap(ent.rect, r)
 
   switch s.shape {
   case .leftUpSlope:
@@ -638,7 +627,7 @@ fn start*(worldData: world_data::WorldData): std::Err {
   }
 
   pal.toggleActiveStatic = metaBoulders
-  saves = []ChumState{}
+  saves = []PAL{}
   camera = getTargetCamera()
 
   if !hasPlayer {
@@ -672,7 +661,7 @@ fn init*(rl: ^resources::ResourceLoader) {
   // bgAudio.setLooping(true)
   defaultFont = rl.loadFont("data/font/FairfaxHD.ttf", 24*2, .linear)
   imgObj = rl.loadImage("data/img/obj_interactive.png", .linear)
-  imgChum = rl.loadImage("data/img/chr_chum.png", .linear)
+  imgPAL = rl.loadImage("data/img/chr_pal.png", .linear)
 }
 
 fn updateEntities() {
@@ -712,23 +701,7 @@ fn drawEntityCustomRect(ent: ^Character, r: rect::Rect) {
   canvas::drawRect(color, camera.mapRect(ent.rect))
 }
 
-cropBoulder        := rect::Rect{0, 0, 64, 128}
-cropLeverOn        := rect::Rect{64, 64, 64, 64}
-cropLeverOff       := rect::Rect{64, 0, 64, 64}
-cropLeverStaticOn  := rect::Rect{256, 64, 64, 64}
-cropLeverStaticOff := rect::Rect{256, 0, 64, 64}
-cropLeverWaterOn   := rect::Rect{320, 128, 64, 64}
-cropLeverWaterOff  := rect::Rect{320, 192, 64, 64}
-cropControls       := rect::Rect{0, 128, 256, 256}
-
-chumStateStand := 0
-chumStateJump  := 1
-chumStateFall  := 2
-chumStandRect  := rect::Rect{128, 0, 128, 128}
-chumFaceRect   := rect::Rect{0, 0, 128, 128}
-chumMouthRect  := rect::Rect{41, 52, 22, 7}
-
-fn drawChum(state: int)
+fn drawPAL(state: int)
 
 fn drawEntityObject*(name: str, tags: ^TagSet, rect: rect::Rect, scale: real): bool {
   if tags.isSet("player") {
@@ -736,8 +709,8 @@ fn drawEntityObject*(name: str, tags: ^TagSet, rect: rect::Rect, scale: real): b
     rect.h *= 2
     rect.y -= rect.h/2.2
     rect.x -= rect.w/6
-    imgChum.blit(chumStandRect, rect)
-    imgChum.blit(chumFaceRect, rect)
+    imgPAL.blit(palStandRect, rect)
+    imgPAL.blit(palFaceRect, rect)
   } else if tags.isSet("lever") {
     if toggleActive {
       imgObj.blit(cropLeverOn, rect)
@@ -791,50 +764,50 @@ fn drawEntity(ent: ^Character) {
   }
 }
 
-fn drawChumState(state: int, chum: ^ChumState, tint: uint32) {
-  chum.loadTime -= th::delta/1000.0
-  if chum.loadTime < 0 {
-    chum.visRect = chum.ent.rect
+fn drawPAL2(state: int, pal: ^PAL, tint: uint32) {
+  pal.loadTime -= th::delta/1000.0
+  if pal.loadTime < 0 {
+    pal.visRect = pal.ent.rect
   } else {
-    chum.visRect = rerp::iRect(chum.visRect, chum.ent.rect, th::delta/100.0)
+    pal.visRect = rerp::iRect(pal.visRect, pal.ent.rect, th::delta/100.0)
   }
 
-  at := chum.visRect.getPos()
-  bodyRect := rect::Rect{chumFaceRect.x+chumFaceRect.w*(state+1), chumFaceRect.y, chumFaceRect.w, chumFaceRect.h}
+  at := pal.visRect.getPos()
+  bodyRect := rect::Rect{palFaceRect.x+palFaceRect.w*(state+1), palFaceRect.y, palFaceRect.w, palFaceRect.h}
   offs := 0.0
-  if chum.dir == 0 {
+  if pal.dir == 0 {
     offs -= 24.5
   } else {
     offs -= 12.5
   }
 
-  chumDestRect := camera.mapRect({at.x+offs, at.y-29, chumFaceRect.w/2, chumFaceRect.h/2})
-  chumMouthDestRect := camera.mapRect({at.x+offs+41-21, at.y-29+52-22.25, 22/2, -7.05/2})
+  palDestRect := camera.mapRect({at.x+offs, at.y-29, palFaceRect.w/2, palFaceRect.h/2})
+  palMouthDestRect := camera.mapRect({at.x+offs+41-21, at.y-29+52-22.25, 22/2, -7.05/2})
 
-  if chum.dir == 0 {
+  if pal.dir == 0 {
     // Mirror.
-    chumDestRect.x += chumDestRect.w
-    chumDestRect.w *= -1
+    palDestRect.x += palDestRect.w
+    palDestRect.w *= -1
 
-    chumMouthDestRect.x += chumMouthDestRect.w+1.5*camera.scale
+    palMouthDestRect.x += palMouthDestRect.w+1.5*camera.scale
   }
 
-  chumMouthDestRect.x -= 0.5
-  chumMouthDestRect.y += 0.5
-  chumMouthDestRect.h -= 1
-  chumMouthDestRect.w += 1
+  palMouthDestRect.x -= 0.5
+  palMouthDestRect.y += 0.5
+  palMouthDestRect.h -= 1
+  palMouthDestRect.w += 1
 
-  imgChum.blit(bodyRect, chumDestRect, tint, chum.rotTime, chumDestRect.getDims().divf(2))
-  imgChum.blit(chumFaceRect, chumDestRect, tint, chum.rotTime, chumDestRect.getDims().divf(2))
-  if chumFrown {
-    imgChum.blit(chumMouthRect, chumMouthDestRect, tint, chum.rotTime, chumDestRect.getDims().divf(2))
+  imgPAL.blit(bodyRect, palDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
+  imgPAL.blit(palFaceRect, palDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
+  if palFrown {
+    imgPAL.blit(palMouthRect, palMouthDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
   }
   if showDebug {
-    canvas::drawText(sprintf("%d %d", trunc(at.x/32), trunc(at.y/32)), chumDestRect.getPos(), th::red, 1)
+    canvas::drawText(sprintf("%d %d", trunc(at.x/32), trunc(at.y/32)), palDestRect.getPos(), th::red, 1)
   }
 }
 
-fn loadStateToChar(state: ChumState) {
+fn loadStateToChar(state: PAL) {
   old := pal
   oldVisRect := pal.visRect
   pal = state
@@ -845,22 +818,21 @@ fn loadStateToChar(state: ChumState) {
   }
 }
 
-fn drawChum(state: int) {
-  drawChumState(state, &pal, 0xFFFFFFFF)
+fn drawPAL(state: int) {
+  drawPAL2(state, &pal, 0xFFFFFFFF)
 }
 
-fn getChumSpriteState(chum: ChumState): int {
-
-  if chum.ent.vel.y > 0 {
-    return chumStateFall
-  } else if !chum.ent.onGround {
-    return chumStateJump
-  } else if chum.walkTime == 0.0 {
-    return chumStateStand
+fn getPALSpriteState(pal: PAL): int {
+  if pal.ent.vel.y > 0 {
+    return palStateFall
+  } else if !pal.ent.onGround {
+    return palStateJump
+  } else if pal.walkTime == 0.0 {
+    return palStateStand
   } else {
-    switch trunc(chum.walkTime*6.0) % 2 {
-      case 0: return chumStateJump
-      case 1: return chumStateStand
+    switch trunc(pal.walkTime*6.0) % 2 {
+      case 0: return palStateJump
+      case 1: return palStateStand
     }
   }
   return -1
@@ -871,7 +843,7 @@ fn drawEntities() {
     drawEntity(entity)
   }
 
-  drawChum(getChumSpriteState(pal))
+  drawPAL(getPALSpriteState(pal))
 }
 
 fn drawEntityDebugRects() {
@@ -939,7 +911,7 @@ fn tele*(to: str) {
 }
 
 fn update*() {
-  chumFrown = jitterCounter > 300
+  palFrown = jitterCounter > 300
 
   toggleActiveVal = rerp::iReal(toggleActiveVal, real(int(toggleActive)), th::delta/1000.0*20.0)
 
@@ -1191,7 +1163,7 @@ fn drawOverlays() {
   }
 }
 
-fn drawObjectsAt(state: ChumState) {
+fn drawObjectsAt(state: PAL) {
   for i, entity in entities {
     if entity.tags.isSet("boulder") {
       power := real(int(state.toggleActiveStatic))
@@ -1203,7 +1175,6 @@ fn drawObjectsAt(state: ChumState) {
     }
   }
 }
-
 
 fn drawRayCast() {
   origin := camera.mapPoint(pal.ent.rect.center())
@@ -1257,9 +1228,9 @@ fn draw*() {
 
   for i, state in saves {
     if !entCheckCollision(&state.ent) {
-      drawChumState(getChumSpriteState(state), &state, 0xFFFFFF44)
+      drawPAL2(getPALSpriteState(state), &state, 0xFFFFFF44)
     } else {
-      drawChumState(getChumSpriteState(state), &state, 0xFF000044)
+      drawPAL2(getPALSpriteState(state), &state, 0xFF000044)
     }
     drawObjectsAt(state)
   }

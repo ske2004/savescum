@@ -108,3 +108,29 @@ fn clamp*(a, b, c: real): real {
          a
 }
 
+fn rectSnap*(r, along: rect::Rect): th::Vf2 {
+  x_left := r.x + r.w - along.x
+  y_up := r.y + r.h - along.y
+
+  x_right := along.x + along.w - r.x
+  y_down := along.y + along.h - r.y
+
+  var (min_x: real; min_y: real)
+
+  if fabs(x_left) < fabs(x_right) {
+    min_x = -x_left
+  } else {
+    min_x = x_right
+  }
+
+  if fabs(y_up) < fabs(y_down) {
+    min_y = -y_up
+  } else {
+    min_y = y_down
+  }
+
+  if fabs(min_x) < fabs(min_y) {
+    return th::Vf2{min_x, 0}
+  }
+  return th::Vf2{0, min_y}
+}
