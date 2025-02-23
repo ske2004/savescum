@@ -99,9 +99,7 @@ palFaceRect   := rect::Rect{0, 0, 128, 128}
 palMouthRect  := rect::Rect{41, 52, 22, 7}
 
 var (
-  time: real
-  coyoteTime: int
-  palFrown: bool = false
+  // Resources
   imgObj: image::Image
   imgPAL: image::Image
   defaultFont: font::Font
@@ -109,36 +107,40 @@ var (
   palStep: audio::Sound
   palJump: audio::Sound
   palLand: audio::Sound
-  jitterDir: real
-  jitterTime: real
-  jitterCounter: int
-  metaBoulders: bool
-  wasOnGround: bool
-  previewingLoad: bool
-  stopPreview: bool
 
+  // PAL
+  pal*: PAL
+  palSaves: []PAL
+  palCoyoteTime: int
+  palFrown: bool = false
+  palJitterDir: real
+  palJitterTime: real
+  palJitterCounter: int
+  palWasOnGround: bool
+  palBufferState: PAL
+  palResetPoint: th::Vf2
+  palInsideStatic: bool
+
+  // World
+  metaBoulders: bool
   noSaveStack: bool
   noSaveLoad: bool
-  insideStatic: bool
   lockInput*: bool
   guides: []rect::Rect
   entities*: []Character
-  sceneId*: int
   world*: world::World
-  pal*: PAL
   camera: Camera
   toggleActive: bool
   toggleActiveVal: real
-  resetPoint: th::Vf2
 
-  saves: []PAL
-  bufferState: PAL
+  // Misc
+  time: real
   showDebug*: bool
+  stopPreview: bool
+  previewingLoad: bool
   lastUpdateTime: int = 0
   frameSkips*: int
-
   firstTime: bool = true
-
   rumbling: real
   controls: controls::Controls
   exited*:  bool
@@ -220,12 +222,12 @@ fn resetStates*() {
   toggleActive = false
   pal.toggleActiveStatic = metaBoulders
   pal.toggleActiveWater = true
-  saves = {}
+  palSaves = {}
 }
 
 fn reset*() {
-  pal.ent.rect.x = resetPoint.x
-  pal.ent.rect.y = resetPoint.y
+  pal.ent.rect.x = palResetPoint.x
+  pal.ent.rect.y = palResetPoint.y
   pal.ent.vel.y = 0
   pal.ent.vel.x = 0
   resetStates()
@@ -234,8 +236,8 @@ fn reset*() {
 fn getCameraTargetRect(): rect::Rect {
 
   guide := findGuideInPoint(pal.ent.rect.getPos())
-  if controls.isPressed(.load) && len(saves) > 0 {
-    guide = findGuideInPoint(saves[len(saves)-1].ent.rect.getPos())
+  if controls.isPressed(.load) && len(palSaves) > 0 {
+    guide = findGuideInPoint(palSaves[len(palSaves)-1].ent.rect.getPos())
   }
   cameraRect := getCameraRect()
   scale := util::min(guide.w/cameraRect.w, guide.h/cameraRect.h)
@@ -247,9 +249,9 @@ fn getCameraTargetRect(): rect::Rect {
   // put at center
   cameraRect.w *= scale
   cameraRect.h *= scale
-  if controls.isPressed(.load) && len(saves) > 0 {
-    cameraRect.x = saves[len(saves)-1].ent.rect.x+saves[len(saves)-1].ent.rect.w/2-cameraRect.w/2
-    cameraRect.y = saves[len(saves)-1].ent.rect.y+saves[len(saves)-1].ent.rect.h/2-cameraRect.h/2
+  if controls.isPressed(.load) && len(palSaves) > 0 {
+    cameraRect.x = palSaves[len(palSaves)-1].ent.rect.x+palSaves[len(palSaves)-1].ent.rect.w/2-cameraRect.w/2
+    cameraRect.y = palSaves[len(palSaves)-1].ent.rect.y+palSaves[len(palSaves)-1].ent.rect.h/2-cameraRect.h/2
   } else {
     cameraRect.x = pal.ent.rect.x+pal.ent.rect.w/2-cameraRect.w/2
     cameraRect.y = pal.ent.rect.y+pal.ent.rect.h/2-cameraRect.h/2
@@ -289,16 +291,16 @@ fn (camera: ^Camera) mapRect(r: rect::Rect): rect::Rect {
 }
 
 fn playerControl() {
-  coyoteTime -= 1
-  if wasOnGround && !pal.ent.onGround {
-    coyoteTime = 40
+  palCoyoteTime -= 1
+  if palWasOnGround && !pal.ent.onGround {
+    palCoyoteTime = 40
   }
-  if !wasOnGround && pal.ent.onGround {
+  if !palWasOnGround && pal.ent.onGround {
     rumbling = 0.2
     palLand.start()
   }
-  if (controls.isPressed(.jump) || input::gamepad().isPressed(.a)) && (pal.ent.onGround || coyoteTime > 0) {
-    coyoteTime = 0
+  if (controls.isPressed(.jump) || input::gamepad().isPressed(.a)) && (pal.ent.onGround || palCoyoteTime > 0) {
+    palCoyoteTime = 0
     palJump.start()
     pal.ent.vel.y = -3.65
   }
@@ -340,7 +342,7 @@ fn playerControl() {
     palStep.play()
   }
 
-  wasOnGround = pal.ent.onGround
+  palWasOnGround = pal.ent.onGround
 }
 
 fn entPhysics(ent: ^Character) {
@@ -518,7 +520,7 @@ fn entCheckCollision(ent: ^Character): bool {
   solids := entConstructCollidingSolids(ent)
 
   for i, shape in solids {
-    // FIXME: This is a shitty hotfix to prevent misdetecting invalid saves.
+    // FIXME: This is a shitty hotfix to prevent misdetecting invalid palSaves.
     shape.rect = shape.rect.shrink({0.01, 0.01})
     if entVsShape(ent, shape) {
       return true
@@ -609,8 +611,8 @@ fn start*(worldData: world_data::WorldData): std::Err {
       chr.rect = r
       pal.ent = chr
       pal.dir = 1
-      resetPoint.x = pal.ent.rect.x
-      resetPoint.y = pal.ent.rect.y
+      palResetPoint.x = pal.ent.rect.x
+      palResetPoint.y = pal.ent.rect.y
       hasPlayer = true
     } else if chr.tags.isSet("Comment") {
       if chr.tags.isSet("Show") {
@@ -627,7 +629,7 @@ fn start*(worldData: world_data::WorldData): std::Err {
   }
 
   pal.toggleActiveStatic = metaBoulders
-  saves = []PAL{}
+  palSaves = []PAL{}
   camera = getTargetCamera()
 
   if !hasPlayer {
@@ -666,21 +668,21 @@ fn init*(rl: ^resources::ResourceLoader) {
 
 fn updateEntities() {
   entPhysics(&pal.ent)
-  if pal.ent.vel.y < 0 && jitterDir >= 0 {
-    jitterDir = -1
-    jitterTime = 0
+  if pal.ent.vel.y < 0 && palJitterDir >= 0 {
+    palJitterDir = -1
+    palJitterTime = 0
   }
-  if pal.ent.vel.y > 0 && jitterDir <= 0 {
-    jitterDir = 1
-    jitterTime = 0
+  if pal.ent.vel.y > 0 && palJitterDir <= 0 {
+    palJitterDir = 1
+    palJitterTime = 0
   }
 
-  jitterTime += updateStep
+  palJitterTime += updateStep
 
-  if jitterTime < 0.1 {
-    jitterCounter += 1
+  if palJitterTime < 0.1 {
+    palJitterCounter += 1
   } else {
-    jitterCounter = 0
+    palJitterCounter = 0
   }
   entSolveCollision(&pal.ent)
 
@@ -813,7 +815,7 @@ fn loadStateToChar(state: PAL) {
   pal = state
   pal.visRect = oldVisRect
   pal.loadTime = 0.25
-  if insideStatic {
+  if palInsideStatic {
     pal.toggleActiveStatic = old.toggleActiveStatic
   }
 }
@@ -904,14 +906,14 @@ fn tele*(to: str) {
       pal.loadTime = 0.5
       pal.ent.rect.x = ent.rect.x+(ent.rect.w-pal.ent.rect.w)/2
       pal.ent.rect.y = ent.rect.y+(ent.rect.h-pal.ent.rect.h)/2
-      resetPoint.x = pal.ent.rect.x
-      resetPoint.y = pal.ent.rect.y
+      palResetPoint.x = pal.ent.rect.x
+      palResetPoint.y = pal.ent.rect.y
     }
   }
 }
 
 fn update*() {
-  palFrown = jitterCounter > 300
+  palFrown = palJitterCounter > 300
 
   toggleActiveVal = rerp::iReal(toggleActiveVal, real(int(toggleActive)), th::delta/1000.0*20.0)
 
@@ -949,8 +951,8 @@ fn update*() {
   }
 
   if stopPreview {
-    saves = append(saves, pal)
-    loadStateToChar(bufferState)
+    palSaves = append(palSaves, pal)
+    loadStateToChar(palBufferState)
     previewingLoad = false
     stopPreview = false
     return
@@ -975,11 +977,11 @@ fn update*() {
     if !noSaveLoad {
       if controls.isJustPressed(.load) || input::gamepad().isJustPressed(.lb) {
         
-        if len(saves) > 0 {
-          for i := len(saves)-1; i >= 0; i-- {
-            if !entCheckCollision(&saves[i].ent) {
-              loadStateToChar(saves[i])
-              saves = delete(saves, i)
+        if len(palSaves) > 0 {
+          for i := len(palSaves)-1; i >= 0; i-- {
+            if !entCheckCollision(&palSaves[i].ent) {
+              loadStateToChar(palSaves[i])
+              palSaves = delete(palSaves, i)
               break
             }
           }
@@ -988,25 +990,25 @@ fn update*() {
       }
 
       if controls.isJustPressed(.save) || input::gamepad().isJustPressed(.rb) {
-        if !(noSaveStack && len(saves) > 0) {
-          saves = append(saves, pal)
+        if !(noSaveStack && len(palSaves) > 0) {
+          palSaves = append(palSaves, pal)
         }
       }
 
       if controls.isJustPressed(.preview) || input::gamepad().isJustPressed(.y) {
-        for i := len(saves)-1; i >= 0; i-- {
-          if !entCheckCollision(&saves[i].ent) {
+        for i := len(palSaves)-1; i >= 0; i-- {
+          if !entCheckCollision(&palSaves[i].ent) {
             previewingLoad = true
-            bufferState = pal
-            loadStateToChar(saves[i])
-            saves = delete(saves, i)
+            palBufferState = pal
+            loadStateToChar(palSaves[i])
+            palSaves = delete(palSaves, i)
             break
           }
         }
       }
     }
     noSaveLoad = false
-    insideStatic = false
+    palInsideStatic = false
 
     if controls.isJustPressed(.reset) || input::gamepad().isJustPressed(.start) {
       reset()
@@ -1041,11 +1043,11 @@ fn update*() {
       
       if ent.tags.isSet("force_load") {
         if coll::rectToRect(ent.rect, pal.ent.rect) {
-          if len(saves) > 0 {
-            for i := len(saves)-1; i >= 0; i-- {
-              if !entCheckCollision(&saves[i].ent) {
-                loadStateToChar(saves[i])
-                saves = delete(saves, i)
+          if len(palSaves) > 0 {
+            for i := len(palSaves)-1; i >= 0; i-- {
+              if !entCheckCollision(&palSaves[i].ent) {
+                loadStateToChar(palSaves[i])
+                palSaves = delete(palSaves, i)
                 // FIXME: This is a hack
                 return
               }
@@ -1056,8 +1058,8 @@ fn update*() {
 
       if ent.tags.isSet("first_save") {
         if coll::rectToRect(ent.rect, pal.ent.rect) {
-          if len(saves) == 0 {
-            saves = append(saves, pal)
+          if len(palSaves) == 0 {
+            palSaves = append(palSaves, pal)
           }
         }
       }
@@ -1075,7 +1077,7 @@ fn update*() {
 
       if ent.tags.isSet("static") {
         if coll::rectToRect(ent.rect, pal.ent.rect) {
-          insideStatic = true
+          palInsideStatic = true
         }
       }
 
@@ -1226,7 +1228,7 @@ fn draw*() {
   drawOverlays()
   drawEntities()
 
-  for i, state in saves {
+  for i, state in palSaves {
     if !entCheckCollision(&state.ent) {
       drawPAL2(getPALSpriteState(state), &state, 0xFFFFFF44)
     } else {
