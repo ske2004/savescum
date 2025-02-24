@@ -591,8 +591,8 @@ fn start*(worldData: world_data::WorldData): std::Err {
   pal.walkTime = 0
   pal.dir = 0
 
-  entities = make([]Character, 0)
-  guides = make([]rect::Rect, 0)
+  entities = []Character{}
+  guides = []rect::Rect{}
 
   hasPlayer := false
 
