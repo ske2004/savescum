@@ -19,6 +19,7 @@ import (
   "../dbg/dbg.um"
   "../shared/shortcuts.um"
   "../misc/hashname.um"
+  "../misc/tagset.um"
   "../dbg/fps.um"
   "../game/world_data.um"
   "../shared/global.um"
@@ -438,7 +439,7 @@ fn applyRectResizeCommand(resizeCommand: RectResizeCommand, r: rect::Rect, delta
   return r
 }
 
-fn drawTaggedEntityRect(editor: ^Editor, entity: ^world_data::EntityDesc, r: rect::Rect, tags: ^game::TagSet) {
+fn drawTaggedEntityRect(editor: ^Editor, entity: ^world_data::EntityDesc, r: rect::Rect, tags: ^tagset::TagSet) {
   if tags.isSet("Guide") {
     canvas::drawRectLines(th::yellow, r)
   } else if tags.isSet("Comment") {
@@ -450,7 +451,7 @@ fn drawTaggedEntityRect(editor: ^Editor, entity: ^world_data::EntityDesc, r: rec
   }
 }
 
-fn adjustEntityRect(editor: ^Editor, tags: ^game::TagSet, ent: ^world_data::EntityDesc): rect::Rect {
+fn adjustEntityRect(editor: ^Editor, tags: ^tagset::TagSet, ent: ^world_data::EntityDesc): rect::Rect {
   r := ent.rect
 
   if r.w < 10 {
@@ -583,7 +584,7 @@ fn (editor: ^Editor) putEntityEditor(ui: ^ui::UI) {
       ui.cellStretch()
       ui.cellAlign(0.5)
 
-      tags := game::initTagSetFromString(entitySelected.tags)
+      tags := tagset::mk(entitySelected.tags)
 
       if tags.isSet("Comment") {
         ui.row(|editor, entitySelected| {
@@ -1058,8 +1059,8 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
     // }
 
     // @FIXME: Initializing tag set every time we render an entity is not efficient at all.
-    tags_ := game::initTagSetFromString(ent.tags)
-    tags := new(game::TagSet, tags_)
+    tags_ := tagset::mk(ent.tags)
+    tags := new(tagset::TagSet, tags_)
     ignore := tags.isSet("Guide") && editor.entityBypass && !isEntitySelected(&editor.entities, i)
 
     ui.cellRect(uiVisRect)

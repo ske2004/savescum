@@ -6,13 +6,13 @@ import (
   "input.um"
   "image.um"
   "window.um"
-  "../misc/strings.um"
   "../dbg/dbg.um"
   "color.um"
   "../gfx/rerp.um"
   "../gfx/background.um"
   "../data/resources.um"
   "../misc/util.um"
+  "../misc/tagset.um"
   "world.um"
   "../shared/global.um"
   "world_data.um"
@@ -38,19 +38,10 @@ type (
     shape: ShapeType
   }
 
-  Tag* = struct {
-    isSet: bool
-    param: str
-  }
-
-  TagSet* = struct {
-    tags: map[str]Tag
-  }
-
   Character* = struct {
     name: str
     id: str
-    tags: TagSet
+    tags: tagset::TagSet
     originalRect: rect::Rect
     rect: rect::Rect
     vel: th::Vf2
@@ -145,64 +136,6 @@ var (
   controls: controls::Controls
   exited*:  bool
 )
-
-fn (t: ^TagSet) set*(tag: str) {
-  params := strings::splitBy(tag, ':')
-  if len(params) > 1 {
-    t.tags[params[0]].param = params[1]
-  }
-  t.tags[params[0]].isSet = true
-}
-
-fn (t: ^TagSet) param*(tag: str): str {
-  return t.tags[tag].param
-}
-
-fn (t: ^TagSet) isSet*(tag: str): bool {
-  return validkey(t.tags, tag) && t.tags[tag].isSet
-}
-
-fn initTagSetFromString*(s: str): TagSet {
-  tagSet := TagSet{map[str]Tag{}}
-
-  accum := ""
-  tagname := ""
-  param := false
-  tag := Tag{false, ""}
-  for i, ch in s {
-    if ch == ':' {
-      tagname = accum
-      accum = ""
-      param = true
-    } else if ch == ';' {
-      if param {
-        tag.param = accum
-      } else {
-        tagname = accum
-      }
-      tag.isSet = true
-      tagSet.tags[tagname] = tag
-      accum = ""
-      param = false
-      tag = Tag{false, ""}
-    } else {
-      accum += ch
-    }
-  }
-
-  if param {
-    tag.param = accum
-  } else {
-    tagname = accum
-  }
-
-  if tagname != "" {
-    tag.isSet = true
-    tagSet.tags[tagname] = tag
-  }
-
-  return tagSet
-}
 
 fn getCameraRect(): rect::Rect {
   return {pal.ent.rect.x+pal.ent.rect.w/2-global::screen.w/2, pal.ent.rect.y+pal.ent.rect.h/2-global::screen.h/2, global::screen.w, global::screen.h}
@@ -558,7 +491,7 @@ fn _drawRectTangents(r: rect::Rect) {
 }
 
 fn convertEntityDescToCharacter(ent: world_data::EntityDesc): Character {
-  return Character{name: ent.name, id: ent.id, tags: initTagSetFromString(ent.tags), rect: ent.rect}
+  return Character{name: ent.name, id: ent.id, tags: tagset::mk(ent.tags), rect: ent.rect}
 }
 
 fn findEntity*(id: str): ^Character {
@@ -705,7 +638,7 @@ fn drawEntityCustomRect(ent: ^Character, r: rect::Rect) {
 
 fn drawPAL(state: int)
 
-fn drawEntityObject*(name: str, tags: ^TagSet, rect: rect::Rect, scale: real): bool {
+fn drawEntityObject*(name: str, tags: ^tagset::TagSet, rect: rect::Rect, scale: real): bool {
   if tags.isSet("player") {
     rect.w *= 2
     rect.h *= 2
