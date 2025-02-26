@@ -824,10 +824,6 @@ fn canActivateWaterLever(): bool {
   return can
 }
 
-fn isActivated(): bool {
-  return controls.isJustPressed(.activate) || input::gamepad().isJustPressed(.down)
-}
-
 fn tele*(to: str) {
   ent := findEntity(to)
   if ent == null {
@@ -951,13 +947,13 @@ fn update*() {
       ent := &entities[i]
 
       if ent.tags.isSet("exit") {
-        if coll::rectToRect(ent.rect, pal.ent.rect) && isActivated() {
+        if coll::rectToRect(ent.rect, pal.ent.rect) && controls.isJustPressed(.activate) {
           exited = true
         }
       }
       if ent.tags.isSet("lever") {
         if coll::rectToRect(ent.rect, pal.ent.rect) {
-          if isActivated() && pal.ent.onGround {
+          if controls.isJustPressed(.activate) && pal.ent.onGround {
             if canActivateLever() {
               toggleActive = !toggleActive
             }
@@ -966,7 +962,7 @@ fn update*() {
       }
       if ent.tags.isSet("lever_s") {
         if coll::rectToRect(ent.rect, pal.ent.rect) && pal.ent.onGround {
-          if isActivated() {
+          if controls.isJustPressed(.activate) {
             if canActivateStaticLever() {
               pal.toggleActiveStatic = !pal.toggleActiveStatic
             }
@@ -1016,7 +1012,7 @@ fn update*() {
 
       if ent.tags.isSet("lever_w") {
          if coll::rectToRect(ent.rect, pal.ent.rect) && pal.ent.onGround {
-          if isActivated() {
+          if controls.isJustPressed(.activate) { 
             if canActivateWaterLever() {
               pal.toggleActiveWater = !pal.toggleActiveWater
             }
@@ -1025,7 +1021,7 @@ fn update*() {
       }
 
       if ent.tags.isSet("tele") {
-        if coll::rectToRect(ent.rect, pal.ent.rect) && isActivated() {
+        if coll::rectToRect(ent.rect, pal.ent.rect) && controls.isJustPressed(.activate) {
           dest := ent.tags.param("tele")
           tele(dest)
         }
