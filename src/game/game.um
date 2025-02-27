@@ -183,8 +183,10 @@ fn getCameraTargetRect(): rect::Rect {
   cameraRect.w *= scale
   cameraRect.h *= scale
   if controls.isPressed(.load) && len(palSaves) > 0 {
-    cameraRect.x = palSaves[len(palSaves)-1].ent.rect.x+palSaves[len(palSaves)-1].ent.rect.w/2-cameraRect.w/2
-    cameraRect.y = palSaves[len(palSaves)-1].ent.rect.y+palSaves[len(palSaves)-1].ent.rect.h/2-cameraRect.h/2
+    lastSave := palSaves[len(palSaves)-1]
+
+    cameraRect.x = lastSave.ent.rect.x+lastSave.ent.rect.w/2-cameraRect.w/2
+    cameraRect.y = lastSave.ent.rect.y+lastSave.ent.rect.h/2-cameraRect.h/2
   } else {
     cameraRect.x = pal.ent.rect.x+pal.ent.rect.w/2-cameraRect.w/2
     cameraRect.y = pal.ent.rect.y+pal.ent.rect.h/2-cameraRect.h/2
