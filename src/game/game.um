@@ -234,7 +234,7 @@ fn playerControl() {
     rumbling = 0.2
     palLand.start()
   }
-  if (controls.isPressed(.jump) || input::gamepad().isPressed(.a)) && (pal.ent.onGround || palCoyoteTime > 0) {
+  if controls.isPressed(.jump) && (pal.ent.onGround || palCoyoteTime > 0) {
     palCoyoteTime = 0
     palJump.start()
     pal.ent.vel.y = -3.65
@@ -869,7 +869,7 @@ fn update*() {
     }
   }
 
-  if previewingLoad && (controls.isJustReleased(.preview) || input::gamepad().isJustReleased(.y)) {
+  if previewingLoad && controls.isJustReleased(.preview) {
     stopPreview = true
   }
 
