@@ -906,7 +906,7 @@ fn update*() {
 
   if !lockInput {
     if !noSaveLoad {
-      if controls.isJustPressed(.load) || input::gamepad().isJustPressed(.lb) {
+      if controls.isJustPressed(.load) {
         
         if len(palSaves) > 0 {
           for i := len(palSaves)-1; i >= 0; i-- {
@@ -920,13 +920,13 @@ fn update*() {
 
       }
 
-      if controls.isJustPressed(.save) || input::gamepad().isJustPressed(.rb) {
+      if controls.isJustPressed(.save) {
         if !(noSaveStack && len(palSaves) > 0) {
           palSaves = append(palSaves, pal)
         }
       }
 
-      if controls.isJustPressed(.preview) || input::gamepad().isJustPressed(.y) {
+      if controls.isJustPressed(.preview) {
         for i := len(palSaves)-1; i >= 0; i-- {
           if !entCheckCollision(&palSaves[i].ent) {
             previewingLoad = true
@@ -941,7 +941,7 @@ fn update*() {
     noSaveLoad = false
     palInsideStatic = false
 
-    if controls.isJustPressed(.reset) || input::gamepad().isJustPressed(.start) {
+    if controls.isJustPressed(.reset) {
       reset()
     }
 
