@@ -11,7 +11,7 @@
 		"json",
 		"os",
 		"args",
-		"umka_api",
+		"umka",
 		"tophat"
 	],
 	"include": [
