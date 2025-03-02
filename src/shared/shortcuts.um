@@ -4,17 +4,35 @@ import (
   "../ui/windows.um"
 )
 
+type Shortcut = struct {
+  mod: input::Key
+  key: input::Key
+}
+
+fn checkShortcut(shortcut: Shortcut): bool {
+  mod := int(shortcut.mod) == 0 ? true : input::isPressed(shortcut.mod) 
+
+  if mod && input::isJustPressed(shortcut.key) {
+    input::clear(shortcut.key)
+    return true
+  }
+
+  return false
+}
+
+_fullscreen1 := Shortcut{.alt, .enter}
+_fullscreen2 := Shortcut{key: .fn11}
+_console := Shortcut{.alt, .t}
+
 // Enables: alt+enter, f11: Enter/Leave fullscreen
 fn fullscreen*() {
-	if (input::isPressed(.alt) && input::isJustPressed(.enter)) || input::isPressed(.fn11) {
-    input::clear(.enter)
+	if checkShortcut(_fullscreen1) || checkShortcut(_fullscreen2) {
     window::setFullscreen(!window::isFullscreen())
 	}
 }
 
 fn console*(wm: ^windows::WindowManager) {
-  if input::isPressed(.alt) && input::isJustPressed(.t) {
-    input::clear(.t)
+  if checkShortcut(_console) {
     wm.toggle("Console")
   }
 }
