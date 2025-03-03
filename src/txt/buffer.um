@@ -109,7 +109,7 @@ fn (buf: ^Buffer) update*(cursor: ^Cursor, text: str) {
     switch int(rune) {
       case 13: // Enter key.
         buf.insert(cursor, "\n")
-      case 8, 27: // Junk?
+      case 127, 8, 27: // Junk?
       default: // Printable character.
         buf.insert(cursor, rune.encode())
     }

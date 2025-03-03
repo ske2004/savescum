@@ -76,7 +76,6 @@ fn init*(cfg: Config) {
     destroyCb = {}
   }
 
-  
   if !problem_screen::setupOnError(rl) {
     window::onFrame.register(|frameCb| {
       global::screen = rect::Rect{0, 0, window::w, window::h}
