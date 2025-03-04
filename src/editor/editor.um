@@ -479,6 +479,8 @@ fn (editor: ^Editor) zoomToCenter() {
   scaleX := editor.tilemapGrid.bb.w/bb.w
   scaleY := editor.tilemapGrid.bb.h/bb.h
 
+  printf("w: %f\n", editor.tilemapGrid.bb.w)
+
   scale := util::min(scaleX, scaleY)
 
   if scale < 8 { scale = 8 }

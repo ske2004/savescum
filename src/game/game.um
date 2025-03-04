@@ -111,10 +111,10 @@ var (
   palBufferState: PAL
   palResetPoint: th::Vf2
   palInsideStatic: bool
+  palNoSaveStack: bool
 
   // World
   metaBoulders: bool
-  noSaveStack: bool
   noSaveLoad: bool
   lockInput*: bool
   guides: []rect::Rect
@@ -509,7 +509,7 @@ fn findEntity*(id: str): ^Character {
 fn start*(worldData: world_data::WorldData): std::Err {
   exited = false
   stopPreview = false
-  noSaveStack = worldData.noSaveStack
+  palNoSaveStack = worldData.palNoSaveStack
   previewingLoad = false
   bgAudio.seekToFrame(0)
   // bgAudio.play()
@@ -921,7 +921,7 @@ fn update*() {
       }
 
       if controls.isJustPressed(.save) {
-        if !(noSaveStack && len(palSaves) > 0) {
+        if !(palNoSaveStack && len(palSaves) > 0) {
           palSaves = append(palSaves, pal)
         }
       }

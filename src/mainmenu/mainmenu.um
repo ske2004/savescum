@@ -149,7 +149,6 @@ fn (menu: ^MainMenu) showExit(ui: ^ui::UI) {
 }
 
 fn (menu: ^MainMenu) update*() {
-  
   if valid(menu.callbacks.frameCb) {
     if menu.viewExit {
       menu.callbacks.frameCb(|menu| {
