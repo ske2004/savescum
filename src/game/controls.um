@@ -22,51 +22,51 @@ type (
     count
   }
 
+  State* = enum {
+    justPressed
+    justReleased
+    pressed
+  }
+
   Controls* = [int(ControlKind.count)]Control
 )
 
-
-fn mk*(): Controls {
-  return {
-    {{.up,    .w     }},
-    {{.down,  .s     }},
-    {{.left,  .a     }},
-    {{.right, .d     }},
-    {{.space, .up, .w}},
-    {{.x,     .e     }},
-    {{.z,     .q     }},
-    {{.down,  .s     }},
-    {{.c,     .tab   }},
-    {{.r             }}
+fn getInputState(k: input::Key, state: State): bool {
+  switch state {
+    case .justPressed:
+      if input::isJustPressed(k) {
+        return true
+      }
+    case .justReleased:
+      if input::isJustReleased(k) {
+        return true
+      }
+    case .pressed:
+      if input::isPressed(k) {
+        return true
+      }
   }
+
+  return false;
+}
+
+fn (ctls: ^Controls) getState*(ck: ControlKind, state: State): bool {
+  for i, k in ctls[int(ck)].opts {
+    if getInputState(k, state) {
+      return true
+    }
+  }
+  return false
 }
 
 fn (ctls: ^Controls) isJustPressed*(ck: ControlKind): bool {
-  for i, k in ctls[int(ck)].opts {
-    if input::isJustPressed(k) {
-      return true
-    }
-  }
-
-  return false
+  return ctls.getState(ck, .justPressed)
 }
 
 fn (ctls: ^Controls) isJustReleased*(ck: ControlKind): bool {
-  for i, k in ctls[int(ck)].opts {
-    if input::isJustReleased(k) {
-      return true
-    }
-  }
-
-  return false
+  return ctls.getState(ck, .justReleased)
 }
 
 fn (ctls: ^Controls) isPressed*(ck: ControlKind): bool {
-  for i, k in ctls[int(ck)].opts {
-    if input::isPressed(k) {
-      return true
-    }
-  }
-
-  return false
+  return ctls.getState(ck, .pressed)
 }

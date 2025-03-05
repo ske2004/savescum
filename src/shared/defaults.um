@@ -1,0 +1,16 @@
+import ("../game/controls.um")
+
+fn controls*(): controls::Controls {
+  return {
+    {{.up,    .w     }},
+    {{.down,  .s     }},
+    {{.left,  .a     }},
+    {{.right, .d     }},
+    {{.space, .up, .w}},
+    {{.x,     .e     }},
+    {{.z,     .q     }},
+    {{.down,  .s     }},
+    {{.c,     .tab   }},
+    {{.r             }}
+  }
+}

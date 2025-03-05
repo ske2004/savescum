@@ -22,7 +22,7 @@ fn sanitize*(unit: real): real {
   return unit
 }
 
-// TODO(skejeton): If the length is 0 then we'll get a division error,
+// TODO(ske): If the length is 0 then we'll get a division error,
 //                 in most cases probably though we'd like to just return unit 1
 //                 after we reach their start.
 fn (s: ^Sequence) pushNext*(length: real) {

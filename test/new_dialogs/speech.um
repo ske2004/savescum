@@ -18,9 +18,9 @@ fn speechHeuristic(word: str, unit: real): real {
 }
 
 fn makeSpokenText*(text: str, time: real, speed: real): SpokenText {
-  // FIXME(skejeton): separating newlines here is a hack to work around 
-  //                  newlines being a separate type during display.
-  //                  so we separate them here so it'll be "easier" later.
+  // FIXME(ske): separating newlines here is a hack to work around 
+  //             being a separate type during display.
+  //             so we separate them here so it'll be "easier" later.
   words := strings::separateChar(strings::intersperse(strings::splitBy(text, ' '), ' '), '\n')
 
   seq := sequence::Sequence{}  

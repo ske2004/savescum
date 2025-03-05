@@ -186,14 +186,14 @@ fn transformTextNodesIntoObjectArray(textNodes: []construct::TextNode, typingTim
   objects := []PushObj{}
   offsetSeconds := 0.0
   speed := 1.0
-  // TODO(skejeton): Ideally I shouldn't manually calculate offsets here as this should be done automatically
-  //                 by the sequencer, for that I'll need to delay the speech typing pass or make it iterative (probably better?).
-  //                 OTOH speech pass can be very context sensetive, so as much text as possible is desired.
-  //                 I think I can request the speech in chunks maybe? The only real problem here is inserting
-  //                 speech nodes in between SwitchColor calls. Maybe saving lengths at the end of each spoken text iteration?
-  //                 idk seems like a hack to me. Ideally there shouldn't be speech nodes and spokenText should just manage
-  //                 text and return us the index at which we are typing as well as the unit value for the next letter.
-  //                 that's much simplier to analyze but I don't know the implications yet.
+  // TODO(ske): Ideally I shouldn't manually calculate offsets here as this should be done automatically
+  //            by the sequencer, for that I'll need to delay the speech typing pass or make it iterative (probably better?).
+  //            OTOH speech pass can be very context sensetive, so as much text as possible is desired.
+  //            I think I can request the speech in chunks maybe? The only real problem here is inserting
+  //            speech nodes in between SwitchColor calls. Maybe saving lengths at the end of each spoken text iteration?
+  //            idk seems like a hack to me. Ideally there shouldn't be speech nodes and spokenText should just manage
+  //            text and return us the index at which we are typing as well as the unit value for the next letter.
+  //            that's much simplier to analyze but I don't know the implications yet.
   for i, node in textNodes {
     spokenText := speech::makeSpokenText(node.text, typingTimeSeconds - offsetSeconds, speed)
     offsetSeconds += spokenText.seconds

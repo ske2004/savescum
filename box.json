@@ -1,7 +1,7 @@
 {
 	"name": "savescum",
 	"version": "7.5%",
-	"author": "Skejeton <contact@ske.land>",
+	"author": "ske <contact@ske.land>",
 	"license": "CC BY-NC-SA 4.0",
 	"description": "SAVESCUM game",
 	"readme": "README.rst",
@@ -16,7 +16,7 @@
 	],
 	"include": [
 	],
-	"source": "https://github.com/skejeton/savescum",
+	"source": "https://github.com/ske2004/savescum",
 	"homepage": "https://savescum.lol",
 	"run": {
 		"posix": "./umbox/tophat/tophat",

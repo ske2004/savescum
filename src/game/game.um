@@ -15,6 +15,7 @@ import (
   "../misc/tagset.um"
   "world.um"
   "../shared/global.um"
+  "../shared/defaults.um"
   "world_data.um"
   "font.um"
   "std.um"
@@ -509,7 +510,7 @@ fn findEntity*(id: str): ^Character {
 fn start*(worldData: world_data::WorldData): std::Err {
   exited = false
   stopPreview = false
-  palNoSaveStack = worldData.palNoSaveStack
+  palNoSaveStack = worldData.noSaveStack
   previewingLoad = false
   bgAudio.seekToFrame(0)
   // bgAudio.play()
@@ -589,7 +590,7 @@ fn setup*() {
 }
 
 fn init*(rl: ^resources::ResourceLoader) {
-  controls = controls::mk()
+  controls = defaults::controls()
   bgAudio = rl.loadAudio("data/audio/soundtrack/scene1.ogg")
   palStep = rl.loadAudio("data/audio/sfx/pal_walk.ogg")
   palJump = rl.loadAudio("data/audio/sfx/pal_jump.ogg")
