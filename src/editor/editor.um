@@ -308,7 +308,11 @@ fn drawLayerIcon(rect: rect::Rect, layer: int, showAllLayers: bool) {
     position.y += 6*scale
 
     if l {
-      canvas::drawRect(0xf0b5afFF, rec)
+      if i-1 == layer {
+        canvas::drawRect(0xf0b5afFF, rec)
+      } else {
+        canvas::drawRect(0x8c4841FF, rec)
+      }
       canvas::drawRectLines(0xFFFFFFFF, rec, 1)
     } else {
       canvas::drawRect(0x99a9a9a9, rec)
@@ -478,8 +482,6 @@ fn (editor: ^Editor) zoomToCenter() {
 
   scaleX := editor.tilemapGrid.bb.w/bb.w
   scaleY := editor.tilemapGrid.bb.h/bb.h
-
-  printf("w: %f\n", editor.tilemapGrid.bb.w)
 
   scale := util::min(scaleX, scaleY)
 
