@@ -145,7 +145,7 @@ fn getCameraRect(): rect::Rect {
 fn findGuideInPoint(p: th::Vf2): rect::Rect {
   for i, guide in guides {
     if coll::vf2ToRect(p, guide) {
-      return guide
+      return guide.shrink({1, 1})
     }
   }
 
