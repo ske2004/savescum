@@ -19,7 +19,7 @@
 	"source": "https://github.com/ske2004/savescum",
 	"homepage": "https://savescum.lol",
 	"run": {
-		"posix": "./umbox/tophat/tophat",
+		"posix": "./umbox/tophat/tophat -dpiaware",
 		"windows": ".\\umbox\\tophat\\tophat -dpiaware"
 	}
 }

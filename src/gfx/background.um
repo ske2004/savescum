@@ -64,7 +64,7 @@ fn drawClouds*(screen: rect::Rect, tint: uint32, bg: uint32, scale: real, time: 
 
   for i := 0; i < stripCount; i++ {
     yOffset := origin+i*step
-    scroll := (i + 1) * (i + 1) * time/5000.0 * -120/stripCount
+    scroll := (i + 1) * (i + 1) * time * -120/stripCount
     color := tint | (trunc(((i + 1.0) / stripCount) * 0xFF) & 0xFF)
 
     drawCloudStrip(scroll, yOffset, color, scale)

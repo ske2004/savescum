@@ -168,7 +168,6 @@ fn reset*() {
 }
 
 fn getCameraTargetRect(): rect::Rect {
-
   guide := findGuideInPoint(pal.ent.rect.getPos())
   if controls.isPressed(.load) && len(palSaves) > 0 {
     guide = findGuideInPoint(palSaves[len(palSaves)-1].ent.rect.getPos())
