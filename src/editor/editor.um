@@ -91,10 +91,11 @@ type (
 
   Editor = struct {
     // Misc
-    debugTimer:        timer::Timer
-    showDebugInfo:     bool
-    showUiDebugInfo:   bool
-    dimDebugInfo:      bool
+    doExit:          ^bool
+    debugTimer:      timer::Timer
+    showDebugInfo:   bool
+    showUiDebugInfo: bool
+    dimDebugInfo:    bool
 
     // Visual data
     resources: EditorResources
@@ -842,6 +843,9 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     if ui.button("> <") {
       editor.zoomToCenter()
     }
+    if iconBtn("Exit", {48, 192, 48, 48}) {
+      editor.doExit ^= true
+    }
   })
 }
 
@@ -1370,7 +1374,7 @@ fn setup*() {
 }
 
 
-fn mk*(ui: ^ui::UI, rl: ^resources::ResourceLoader): ^Editor {
+fn mk*(ui: ^ui::UI, rl: ^resources::ResourceLoader, doExit: ^bool): ^Editor {
   // @TODO: Since we update DPI, we need to also update the resources.
   resources := EditorResources {
     tilesetImage: rl.loadImage("data/img/ts_sky.png", .linear),
@@ -1386,6 +1390,7 @@ fn mk*(ui: ^ui::UI, rl: ^resources::ResourceLoader): ^Editor {
   scale := window::getDpiScaleFactor()-0.25
 
   editor := &Editor{
+    doExit:               doExit,
     ui:                   ui,
     tilemapGrid:          grid::Grid{s: {48*scale, 48*scale}},
     tilesetGrid:          grid::Grid{s: {48*scale, 48*scale}},

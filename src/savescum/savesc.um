@@ -61,7 +61,7 @@ fn init*(cfg: Config) {
     destroyCb = |menu| { menu.destroy() }
   case .editor:
     editor::setup()
-    editor := editor::mk(ui, rl)
+    editor := editor::mk(ui, rl, new(bool))
     frameCb = |editor| { editor.update({}) }
     destroyCb = |editor| { editor.destroy() }
   case .game:

@@ -110,7 +110,7 @@ fn (menu: ^MainMenu) setupGame*(lvl: str) {
 }
 
 fn (menu: ^MainMenu) setupEditor*() {
-  editor := editor::mk(menu.ui, menu.rl)
+  editor := editor::mk(menu.ui, menu.rl, &menu.doExit)
   menu.callbacks.frameCb = |editor| { editor.update(uicb) }
   menu.callbacks.destroyCb = |editor| { editor.destroy() }
 
