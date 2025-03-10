@@ -52,6 +52,7 @@ fn init*(cfg: Config) {
   // @TODO: This is not needed everywhere.
   background::init(rl)
   game::init(rl)
+  didExit := new(bool)
 
   switch cfg.mode {
   case .mainmenu:
@@ -61,7 +62,7 @@ fn init*(cfg: Config) {
     destroyCb = |menu| { menu.destroy() }
   case .editor:
     editor::setup()
-    editor := editor::mk(ui, rl, new(bool))
+    editor := editor::mk(ui, rl, didExit)
     frameCb = |editor| { editor.update({}) }
     destroyCb = |editor| { editor.destroy() }
   case .game:
@@ -77,11 +78,15 @@ fn init*(cfg: Config) {
   }
 
   if !problem_screen::setupOnError(rl) {
-    window::onFrame.register(|frameCb| {
+    window::onFrame.register(|didExit, destroyCb, frameCb| {
       global::screen = rect::Rect{0, 0, window::w, window::h}
       window::setViewport({window::w, window::h})
       frameCb({})
       immcursor::update()
+      if didExit^ {
+        destroyCb({})
+        exit(0)
+      }
     })
     window::onDestroy.register(destroyCb)
   }
