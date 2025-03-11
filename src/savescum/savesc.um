@@ -40,6 +40,8 @@ fn init*(cfg: Config) {
 
   rl := new(resources::ResourceLoader, resources::mk())
 
+  icon := rl.loadImage("data/img/ui/icon.png")
+
   ui := setup_ui::setup({
     mainFont:   rl.loadFont("data/font/FairfaxHD.ttf", 24, .linear),
     bevelImage: rl.loadImage("data/img/ui/1_5x/base.png", .linear),
@@ -90,6 +92,8 @@ fn init*(cfg: Config) {
     })
     window::onDestroy.register(destroyCb)
   }
+
+  window::setIcon(icon)
 }
 
 fn initLogs() {
