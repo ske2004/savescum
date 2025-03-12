@@ -70,6 +70,11 @@ type (
     undo(editor: ^Editor)
   }
 
+  EntityMoveAction = struct {
+    id: str
+    from, to: th::Vf2
+  }
+
   TilePlaceAction = struct {
     at:    th::Vf2
     layer: int
@@ -121,6 +126,27 @@ type (
     ui: ^ui::UI
   }
 )
+
+fn findEntity(entities: []world_data::EntityDesc, id: str): ^world_data::EntityDesc {
+  for i, entity^ in entities {
+    if entity.id == id {
+      return entity
+    }
+  }
+  return null
+}
+
+fn (it: ^EntityMoveAction) do(editor: ^Editor) {
+  editor.dirty = true
+  rect := &findEntity(editor.entities.list, it.id).rect
+  rect.x, rect.y = it.to.x, it.to.y
+}
+
+fn (it: ^EntityMoveAction) undo(editor: ^Editor) {
+  editor.dirty = true
+  rect := &findEntity(editor.entities.list, it.id).rect
+  rect.x, rect.y = it.from.x, it.from.y
+}
 
 fn (it: ^TilePlaceAction) do(editor: ^Editor) {
   editor.dirty = true
@@ -191,8 +217,13 @@ fn (editor: ^Editor) setTile(pos: th::Vf2, layer: int, tile: int) {
     return
   }
 
-  editor.dirty = true
   editor.actionBuf.do(TilePlaceAction{pos, layer, prev, tile})
+}
+
+fn (editor: ^Editor) moveEntity(id: str, to: th::Vf2) {
+  ent := findEntity(editor.entities.list, id)
+  
+  editor.actionBuf.do(EntityMoveAction{id, ent.rect.getPos(), to})
 }
 
 fn updateZoom(init: real, plus: real): th::Vf2 {
@@ -342,18 +373,9 @@ fn removeEntity(editorEntities: ^EditorEntities, index: int) {
   editorEntities.list = delete(editorEntities.list, index)
 }
 
-fn findEntity(entities: []world_data::EntityDesc, id: str): bool {
-  for i, entity in entities {
-    if entity.id == id {
-      return true
-    }
-  }
-  return false
-}
-
 fn allocateEntityId(entities: []world_data::EntityDesc): str {
   id := hashname::random()
-  for findEntity(entities, id) {
+  for findEntity(entities, id) != null {
     dbg::logt("allocateEntityId: regenerating id!!")
     id = hashname::random()
   }
@@ -1121,14 +1143,12 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
             }
           } else {
             if dx != 0 {
-              ent.rect.x += dx*32
-              ent.rect.x = 32*round(ent.rect.x/32)
-              editor.dirty = true
+              editor.moveEntity(ent.id, {32*round((ent.rect.x+dx*32)/32), ent.rect.y})
+              editor.actionBuf.commit()
             }
             if dy != 0 {
-              ent.rect.y += dy*32
-              ent.rect.y = 32*round(ent.rect.y/32)
-              editor.dirty = true
+              editor.moveEntity(ent.id, {32*round((ent.rect.y+dy*32)/32), ent.rect.x})
+              editor.actionBuf.commit()
             }
           }
 
@@ -1151,8 +1171,13 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
           sizeD := adjusted.getDims().sub(ent.rect.getDims())
           ent.rect = adjusted
 
-          ent.rect.x -= rectCmd.posFactor.x*sizeD.x
-          ent.rect.y -= rectCmd.posFactor.y*sizeD.y
+          if input::isPressed(.mouse1) {
+            editor.moveEntity(ent.id, {ent.rect.x-rectCmd.posFactor.x*sizeD.x, ent.rect.y-rectCmd.posFactor.y*sizeD.y})
+          }
+
+          if input::isJustReleased(.mouse1) {
+            editor.actionBuf.commit()
+          }
         }
 
         hovered = ui.isHovered()
