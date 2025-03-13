@@ -70,9 +70,9 @@ type (
     undo(editor: ^Editor)
   }
 
-  EntityMoveAction = struct {
+  EntityTransformAction = struct {
     id: str
-    from, to: th::Vf2
+    from, to: rect::Rect
   }
 
   TilePlaceAction = struct {
@@ -136,16 +136,16 @@ fn findEntity(entities: []world_data::EntityDesc, id: str): ^world_data::EntityD
   return null
 }
 
-fn (it: ^EntityMoveAction) do(editor: ^Editor) {
+fn (it: ^EntityTransformAction) do(editor: ^Editor) {
   editor.dirty = true
   rect := &findEntity(editor.entities.list, it.id).rect
-  rect.x, rect.y = it.to.x, it.to.y
+  rect ^= it.to
 }
 
-fn (it: ^EntityMoveAction) undo(editor: ^Editor) {
+fn (it: ^EntityTransformAction) undo(editor: ^Editor) {
   editor.dirty = true
   rect := &findEntity(editor.entities.list, it.id).rect
-  rect.x, rect.y = it.from.x, it.from.y
+  rect ^= it.from
 }
 
 fn (it: ^TilePlaceAction) do(editor: ^Editor) {
@@ -220,10 +220,10 @@ fn (editor: ^Editor) setTile(pos: th::Vf2, layer: int, tile: int) {
   editor.actionBuf.do(TilePlaceAction{pos, layer, prev, tile})
 }
 
-fn (editor: ^Editor) moveEntity(id: str, to: th::Vf2) {
+fn (editor: ^Editor) transformEntity(id: str, to: rect::Rect) {
   ent := findEntity(editor.entities.list, id)
   
-  editor.actionBuf.do(EntityMoveAction{id, ent.rect.getPos(), to})
+  editor.actionBuf.do(EntityTransformAction{id, ent.rect, to})
 }
 
 fn updateZoom(init: real, plus: real): th::Vf2 {
@@ -1130,26 +1130,32 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
             dx += -1
             input::clear(.left)
           }
+
+          newRect := ent.rect
+
           if input::isPressed(.alt) {
             if dx != 0 {
-              ent.rect.w += dx*32
-              ent.rect.w = 32*round(ent.rect.w/32)
-              editor.dirty = true
+              newRect.w += dx*32
+              newRect.w = 32*round(newRect.w/32)
             }
             if dy != 0 {
-              ent.rect.h += dy*32
-              ent.rect.h = 32*round(ent.rect.h/32)
-              editor.dirty = true
+              newRect.h += dy*32
+              newRect.h = 32*round(newRect.h/32)
             }
           } else {
             if dx != 0 {
-              editor.moveEntity(ent.id, {32*round((ent.rect.x+dx*32)/32), ent.rect.y})
-              editor.actionBuf.commit()
+              newRect.x += dx*32
+              newRect.x = 32*round(newRect.x/32)
             }
             if dy != 0 {
-              editor.moveEntity(ent.id, {32*round((ent.rect.y+dy*32)/32), ent.rect.x})
-              editor.actionBuf.commit()
+              newRect.y += dy*32
+              newRect.y = 32*round(newRect.y/32)
             }
+          }
+
+          if dx != 0 || dy != 0 {
+            editor.transformEntity(ent.id, newRect)
+            editor.actionBuf.commit()
           }
 
           if input::isJustPressed(.delete) {
@@ -1172,7 +1178,12 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
           ent.rect = adjusted
 
           if input::isPressed(.mouse1) {
-            editor.moveEntity(ent.id, {ent.rect.x-rectCmd.posFactor.x*sizeD.x, ent.rect.y-rectCmd.posFactor.y*sizeD.y})
+            editor.transformEntity(ent.id, {
+              ent.rect.x-rectCmd.posFactor.x*sizeD.x,
+              ent.rect.y-rectCmd.posFactor.y*sizeD.y,
+              ent.rect.w,
+              ent.rect.h,
+            })
           }
 
           if input::isJustReleased(.mouse1) {
