@@ -70,6 +70,12 @@ type (
     undo(editor: ^Editor)
   }
 
+  EntityPlace = struct {
+    ent: world_data::EntityDesc
+    index: int
+    action: enum {add; remove}
+  }
+
   EntityTransformAction = struct {
     id: str
     from, to: rect::Rect
@@ -134,6 +140,29 @@ fn findEntity(entities: []world_data::EntityDesc, id: str): ^world_data::EntityD
     }
   }
   return null
+}
+
+fn (it: ^EntityPlace) do(editor: ^Editor) {
+  // TODO: Better selection handling.
+  editor.entities.entitySelected = -1
+
+  editor.dirty = true
+  if it.action == .add {
+    editor.entities.list = insert(editor.entities.list, it.index, it.ent)
+  } else {
+    editor.entities.list = delete(editor.entities.list, it.index)
+  }
+}
+
+fn (it: ^EntityPlace) undo(editor: ^Editor) {
+  editor.entities.entitySelected = -1
+
+  editor.dirty = true
+  if it.action == .add {
+    editor.entities.list = delete(editor.entities.list, it.index)
+  } else {
+    editor.entities.list = insert(editor.entities.list, it.index, it.ent)
+  }
 }
 
 fn (it: ^EntityTransformAction) do(editor: ^Editor) {
@@ -224,6 +253,22 @@ fn (editor: ^Editor) transformEntity(id: str, to: rect::Rect) {
   ent := findEntity(editor.entities.list, id)
   
   editor.actionBuf.do(EntityTransformAction{id, ent.rect, to})
+}
+
+fn (editor: ^Editor) removeEntity(index: int) {
+  editor.actionBuf.do(EntityPlace{
+    ent: editor.entities.list[index],
+    index: index,
+    action: .remove,
+  })
+}
+
+fn (editor: ^Editor) addEntity(entity: world_data::EntityDesc, index: int) {
+  editor.actionBuf.do(EntityPlace{
+    ent: entity,
+    index: index,
+    action: .add,
+  })
 }
 
 fn updateZoom(init: real, plus: real): th::Vf2 {
@@ -359,18 +404,8 @@ fn (gc: ^GameCmd) draw(props: drawcmd::DrawProperties) {
   game::draw()
 }
 
-fn appendEntity(editorEntities: ^EditorEntities, entity: world_data::EntityDesc) {
-  editorEntities.list = append(editorEntities.list, entity)
-}
-
-fn removeEntity(editorEntities: ^EditorEntities, index: int) {
-  if index == editorEntities.entitySelected {
-    editorEntities.entitySelected = -1
-  } else if index < editorEntities.entitySelected {
-    // Shift the selected entity index down if entity below to be removed
-    editorEntities.entitySelected -= 1
-  }
-  editorEntities.list = delete(editorEntities.list, index)
+fn appendEntity(editor: ^Editor, entity: world_data::EntityDesc) {
+  editor.addEntity(entity, len(editor.entities.list))
 }
 
 fn allocateEntityId(entities: []world_data::EntityDesc): str {
@@ -405,7 +440,6 @@ fn cloneEntity(entities: []world_data::EntityDesc, ent: world_data::EntityDesc):
 }
 
 fn doEntityAction(ui: ^ui::UI, editor: ^Editor, action: EntityListAction, i: int) {
-  entryRemoveIndex := -1
   moveFrom := -1
   moveTo := -1
 
@@ -419,17 +453,13 @@ fn doEntityAction(ui: ^ui::UI, editor: ^Editor, action: EntityListAction, i: int
       moveTo = i+1
       editor.dirty = true
     case .remove:
-      entryRemoveIndex = i
-      editor.dirty = true
+      editor.removeEntity(i)
     case .edit:
       selectEntity(&editor.entities, i)
       implvtbl::VTBLImpl(ui.vtbl).wm.show("Entity Editor")
     case .duplicate:
-      appendEntity(&editor.entities, cloneEntity(editor.entities.list, editor.entities.list[i]))
-      moveFrom = len(editor.entities.list)-1
-      moveTo = i+1
-      selectEntity(&editor.entities, moveFrom)
-      editor.dirty = true
+      editor.addEntity(cloneEntity(editor.entities.list, editor.entities.list[i]), i+1)
+      selectEntity(&editor.entities, i+1)
   }
 
   if moveFrom != -1 && moveTo != -1 && moveFrom < len(editor.entities.list) && moveTo < len(editor.entities.list) {
@@ -440,11 +470,6 @@ fn doEntityAction(ui: ^ui::UI, editor: ^Editor, action: EntityListAction, i: int
     ent := editor.entities.list[moveFrom]
     editor.entities.list[moveFrom] = editor.entities.list[moveTo]
     editor.entities.list[moveTo] = ent
-  }
-
-  if entryRemoveIndex != -1 {
-    removeEntity(&editor.entities, entryRemoveIndex)
-    editor.dirty = true
   }
 }
 
@@ -644,7 +669,7 @@ fn (editor: ^Editor) putEntityEditor(ui: ^ui::UI) {
 
       ui.cellStretch()
       if editor.ui.button("Delete") {
-        removeEntity(&editor.entities, getEntitySelectedIndex(&editor.entities))
+        editor.removeEntity(getEntitySelectedIndex(&editor.entities))
         editor.dirty = true
       }
     })
@@ -726,7 +751,7 @@ fn (editor: ^Editor) putEntityList(ui: ^ui::UI) {
     ui.cellUnclip()
     ui.cellRect(buttonRect)
     if ui.button("+") {
-      appendEntity(&editor.entities, initEntityAtCenter(editor, makeRandomEntity(allocateEntityId(editor.entities.list))))
+      appendEntity(editor, initEntityAtCenter(editor, makeRandomEntity(allocateEntityId(editor.entities.list))))
       editor.dirty = true
       _scrollbar.overflow = true
     }
@@ -766,7 +791,7 @@ fn (editor: ^Editor) putQuickAdd*(ui: ^ui::UI) {
         ent.rect.w = option.size.x
         ent.rect.h = option.size.y
         ent.tags = option.tags
-        appendEntity(&editor.entities, ent)
+        appendEntity(editor, ent)
         editor.entities.entitySelected = len(editor.entities.list)-1
         editor.dirty = true
         implvtbl::VTBLImpl(ui.vtbl).wm.toggle("Quick Add")
@@ -1216,7 +1241,7 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
   }
 
   if del != -1 {
-    removeEntity(&editor.entities, del)
+    editor.removeEntity(del)
   }
 }
 
