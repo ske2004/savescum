@@ -142,27 +142,24 @@ fn findEntity(entities: []world_data::EntityDesc, id: str): ^world_data::EntityD
   return null
 }
 
-fn (it: ^EntityPlace) do(editor: ^Editor) {
-  // TODO: Better selection handling.
+fn doPlace(it: ^EntityPlace, editor: ^Editor, isDo: bool) {
   editor.entities.entitySelected = -1
 
   editor.dirty = true
-  if it.action == .add {
+  if (it.action == .add) == isDo {
     editor.entities.list = insert(editor.entities.list, it.index, it.ent)
   } else {
     editor.entities.list = delete(editor.entities.list, it.index)
   }
 }
 
-fn (it: ^EntityPlace) undo(editor: ^Editor) {
-  editor.entities.entitySelected = -1
+fn (it: ^EntityPlace) do(editor: ^Editor) {
+  // TODO: Better selection handling.
+  doPlace(it, editor, true)
+}
 
-  editor.dirty = true
-  if it.action == .add {
-    editor.entities.list = delete(editor.entities.list, it.index)
-  } else {
-    editor.entities.list = insert(editor.entities.list, it.index, it.ent)
-  }
+fn (it: ^EntityPlace) undo(editor: ^Editor) {
+  doPlace(it, editor, false)
 }
 
 fn (it: ^EntityTransformAction) do(editor: ^Editor) {
