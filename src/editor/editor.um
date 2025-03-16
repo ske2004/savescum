@@ -73,6 +73,7 @@ type (
   EntityPlace = struct {
     ent: world_data::EntityDesc
     index: int
+    selectId: str
     action: enum {add; remove}
   }
 
@@ -133,6 +134,15 @@ type (
   }
 )
 
+fn findEntity2(entities: []world_data::EntityDesc, id: str): (^world_data::EntityDesc, int) {
+  for i, entity^ in entities {
+    if entity.id == id {
+      return entity, i
+    }
+  }
+  return null, -1
+}
+
 fn findEntity(entities: []world_data::EntityDesc, id: str): ^world_data::EntityDesc {
   for i, entity^ in entities {
     if entity.id == id {
@@ -151,6 +161,10 @@ fn doPlace(it: ^EntityPlace, editor: ^Editor, isDo: bool) {
   } else {
     editor.entities.list = delete(editor.entities.list, it.index)
   }
+
+  ent, index := findEntity2(editor.entities.list, it.selectId)
+
+  editor.entities.entitySelected = index
 }
 
 fn (it: ^EntityPlace) do(editor: ^Editor) {
@@ -254,6 +268,7 @@ fn (editor: ^Editor) transformEntity(id: str, to: rect::Rect) {
 
 fn (editor: ^Editor) removeEntity(index: int) {
   editor.actionBuf.do(EntityPlace{
+    selectId: editor.entities.list[editor.entities.entitySelected].id,
     ent: editor.entities.list[index],
     index: index,
     action: .remove,
@@ -262,6 +277,7 @@ fn (editor: ^Editor) removeEntity(index: int) {
 
 fn (editor: ^Editor) addEntity(entity: world_data::EntityDesc, index: int) {
   editor.actionBuf.do(EntityPlace{
+    selectId: editor.entities.list[editor.entities.entitySelected].id,
     ent: entity,
     index: index,
     action: .add,
