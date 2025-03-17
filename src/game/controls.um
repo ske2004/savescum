@@ -33,18 +33,9 @@ type (
 
 fn getInputState(k: input::Key, state: State): bool {
   switch state {
-    case .justPressed:
-      if input::isJustPressed(k) {
-        return true
-      }
-    case .justReleased:
-      if input::isJustReleased(k) {
-        return true
-      }
-    case .pressed:
-      if input::isPressed(k) {
-        return true
-      }
+    case .justPressed: return input::isJustPressed(k)
+    case .justReleased: return input::isJustReleased(k)
+    case .pressed: return input::isPressed(k)
   }
 
   return false;
