@@ -1,5 +1,6 @@
 import (
   "input.um"
+  "th.um"
 )
 
 
@@ -60,4 +61,19 @@ fn (ctls: ^Controls) isJustReleased*(ck: ControlKind): bool {
 
 fn (ctls: ^Controls) isPressed*(ck: ControlKind): bool {
   return ctls.getState(ck, .pressed)
+}
+
+fn (ctls: ^Controls) joy*(): th::Vf2 {
+  result := th::Vf2{0, 0}
+
+  if ctls.isPressed(.left) { result.x -= 1 } 
+  if ctls.isPressed(.right) { result.x += 1 }
+  if ctls.isPressed(.up) { result.y -= 1 }
+  if ctls.isPressed(.down) { result.y += 1 }
+
+  if result.mag() > 0.01 {
+    return result
+  }
+
+  return input::gamepad().stick(.left)
 }

@@ -252,16 +252,20 @@ fn playerControl() {
       pal.ent.vel.x = 2.5*stick.x
     }
   }
-  if controls.isPressed(.left) {
-    pal.dir = 0
-    pal.ent.vel.x = -2.5
-    pal.walkTime += updateStep
+
+  joy := controls.joy()
+
+  // deadzone
+  if fabs(joy.x-0.0) > 0.1 {
+    if joy.x < 0 {
+      pal.dir = 0
+    } else {
+      pal.dir = 1
+    }
   }
-  if controls.isPressed(.right) {
-    pal.dir = 1
-    pal.ent.vel.x = 2.5
-    pal.walkTime += updateStep
-  }
+
+  pal.ent.vel.x = joy.x*2.5
+  pal.walkTime += updateStep*fabs(joy.x)
 
   if fabs(pal.ent.vel.x) < 0.1 {
     pal.walkTime = 0
