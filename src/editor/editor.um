@@ -266,9 +266,17 @@ fn (editor: ^Editor) transformEntity(id: str, to: rect::Rect) {
   editor.actionBuf.do(EntityTransformAction{id, ent.rect, to})
 }
 
+fn getSelectId(editor: ^Editor): str {
+  if editor.entities.entitySelected == -1 {
+    return "<NULL>"
+  }
+
+  return editor.entities.list[editor.entities.entitySelected].id
+}
+
 fn (editor: ^Editor) removeEntity(index: int) {
   editor.actionBuf.do(EntityPlace{
-    selectId: editor.entities.list[editor.entities.entitySelected].id,
+    selectId: getSelectId(editor),
     ent: editor.entities.list[index],
     index: index,
     action: .remove,
@@ -277,7 +285,7 @@ fn (editor: ^Editor) removeEntity(index: int) {
 
 fn (editor: ^Editor) addEntity(entity: world_data::EntityDesc, index: int) {
   editor.actionBuf.do(EntityPlace{
-    selectId: editor.entities.list[editor.entities.entitySelected].id,
+    selectId: getSelectId(editor),
     ent: entity,
     index: index,
     action: .add,
@@ -765,6 +773,7 @@ fn (editor: ^Editor) putEntityList(ui: ^ui::UI) {
     ui.cellRect(buttonRect)
     if ui.button("+") {
       appendEntity(editor, initEntityAtCenter(editor, makeRandomEntity(allocateEntityId(editor.entities.list))))
+      editor.actionBuf.commit()
       editor.dirty = true
       _scrollbar.overflow = true
     }
