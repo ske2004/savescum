@@ -134,13 +134,13 @@ type (
   }
 )
 
-fn findEntity2(entities: []world_data::EntityDesc, id: str): (^world_data::EntityDesc, int) {
+fn findEntityIndex(entities: []world_data::EntityDesc, id: str): int {
   for i, entity^ in entities {
     if entity.id == id {
-      return entity, i
+      return i
     }
   }
-  return null, -1
+  return -1
 }
 
 fn findEntity(entities: []world_data::EntityDesc, id: str): ^world_data::EntityDesc {
@@ -162,9 +162,7 @@ fn doPlace(it: ^EntityPlace, editor: ^Editor, isDo: bool) {
     editor.entities.list = delete(editor.entities.list, it.index)
   }
 
-  ent, index := findEntity2(editor.entities.list, it.selectId)
-
-  editor.entities.entitySelected = index
+  editor.entities.entitySelected = findEntityIndex(editor.entities.list, it.selectId)
 }
 
 fn (it: ^EntityPlace) do(editor: ^Editor) {
