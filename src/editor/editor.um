@@ -166,7 +166,6 @@ fn doPlace(it: ^EntityPlace, editor: ^Editor, isDo: bool) {
 }
 
 fn (it: ^EntityPlace) do(editor: ^Editor) {
-  // TODO: Better selection handling.
   doPlace(it, editor, true)
 }
 
