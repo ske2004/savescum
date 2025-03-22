@@ -4,10 +4,6 @@
 # Compiled C module 
 *.umi
 
-# Emacs 
-.#*
-*#
-
 # Vim 
 *~
 *.swp
