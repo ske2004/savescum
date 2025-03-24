@@ -6,7 +6,15 @@ import (
 type TileSpan* = struct {
   pos: th::Vf2
   // X&Y are coords of top left visbile tile.
-  x, y, w, h: uint
+  x, y, w, h: int
+}
+
+fn fixmod(a, b: real): real {
+  result := a % b
+  if result < 0 {
+    return b+result
+  }
+  return result
 }
 
 fn calculateTileSpanOnScreen*(tileSize: th::Vf2, screen: rect::Rect): TileSpan {
@@ -15,6 +23,6 @@ fn calculateTileSpanOnScreen*(tileSize: th::Vf2, screen: rect::Rect): TileSpan {
     y: floor(screen.y/tileSize.y),
     w: ceil(screen.w/tileSize.x+1), // Add one for tiles drawn in middle of scroll
     h: ceil(screen.h/tileSize.y+1),
-    pos: th::Vf2{-fabs(screen.x % tileSize.x), -fabs(screen.y % tileSize.y)}
+    pos: th::Vf2{-fabs(fixmod(screen.x, tileSize.x)), -fabs(fixmod(screen.y, tileSize.y))}
   }
 }
