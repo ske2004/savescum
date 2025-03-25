@@ -287,6 +287,7 @@ fn (editor: ^Editor) addEntity(entity: world_data::EntityDesc, index: int) {
     index: index,
     action: .add,
   })
+  editor.actionBuf.commit()
 }
 
 fn updateZoom(init: real, plus: real): th::Vf2 {
@@ -770,7 +771,6 @@ fn (editor: ^Editor) putEntityList(ui: ^ui::UI) {
     ui.cellRect(buttonRect)
     if ui.button("+") {
       appendEntity(editor, initEntityAtCenter(editor, makeRandomEntity(allocateEntityId(editor.entities.list))))
-      editor.actionBuf.commit()
       editor.dirty = true
       _scrollbar.overflow = true
     }
