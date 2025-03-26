@@ -36,7 +36,6 @@ fn save*(wd: WorldData): str {
   entities := wd.entities
 
   data := make([][]str, 0)
-  // ver
   data = append(data, []str{lastVersion})
   data = append(data, []str{sprintf("%d", len(entities))})
   for i, ent in entities {

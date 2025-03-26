@@ -71,7 +71,7 @@ levels := []str{
   "advent24a", 
   "advent24b", 
   "advent25a", 
-  "testarea"
+  "testarea",
 }
 
 type Callbacks* = struct {

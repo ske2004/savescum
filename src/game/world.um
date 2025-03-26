@@ -100,13 +100,7 @@ fn getTileSizeInPixels(world: ^World): th::Vf2 {
   return th::Vf2{world.tileset.cs.x/2, world.tileset.cs.y/2}
 }
 
-//
-// getTangentTiles(
-//      r: Rectangle to find tangent tiles around
-// ): List of tangents, position of tile and it's id.
-//
 // NOTE: This function only checks middleground layer (layer 0)
-//
 fn (world: ^World) getTangentTiles*(r: rect::Rect): []Tangent {
   sz := getTileSizeInPixels(world)
 
@@ -239,7 +233,6 @@ fn (world: ^World) getBoundingBox*(): rect::Rect {
 
   chunkBB.w -= chunkBB.x
   chunkBB.h -= chunkBB.y
-
 
   return chunkBB
 }
