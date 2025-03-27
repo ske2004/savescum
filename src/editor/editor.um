@@ -1245,10 +1245,13 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
 
         ui.popId()
       }
-
+ 
       entCopy := ent^
-      ui.drawCustom(|focused, hovered, editor, entCopy, entVisRect, tags| {
+      ui.drawCustom(|ignore, focused, hovered, editor, entCopy, entVisRect, tags| {
         drawTaggedEntityRect(editor, &entCopy, entVisRect, tags)
+        if !ignore && tags.isSet("Guide") {
+          canvas::drawRect(0xFFFF0077, entVisRect)
+        }
         if hovered {
           canvas::drawRectLines(0xFFFF00FF, entVisRect)
         }
