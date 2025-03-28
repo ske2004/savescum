@@ -23,6 +23,7 @@ fn checkShortcut(shortcut: Shortcut): bool {
 _fullscreen1 := Shortcut{.alt, .enter}
 _fullscreen2 := Shortcut{key: .fn11}
 _console := Shortcut{.alt, .t}
+_debug := Shortcut{.alt, .d}
 
 // Enables: alt+enter, f11: Enter/Leave fullscreen
 fn fullscreen*() {
@@ -36,4 +37,11 @@ fn console*(wm: ^windows::WindowManager) {
     wm.toggle("Console")
   }
 }
+
+fn debug*(wm: ^windows::WindowManager) {
+  if checkShortcut(_debug) {
+    wm.toggle("Action Log")
+  }
+}
+
 

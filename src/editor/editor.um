@@ -865,7 +865,6 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     }
 
     windowBtn("Room", {48*2, 48*2, 48, 48})
-    windowBtn("Action Log", {144, 192, 48, 48})
     windowBtn("Tile Picker", {48*0, 48, 48, 48})
     windowBtn("Entity List", {48*0, 48*2, 48, 48})
 
@@ -874,10 +873,25 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     flags := editor.entityBypass ? ui::buttonFlagPushed : 0
     ui.spring(1)
     ui.cellStretch()
-    ui.cellSameSize()
     if editor.entityBypass { ui.cellColor(0x777777FF) }
     if ui.button("🔒", flags) {
       editor.entityBypass = !editor.entityBypass
+    }
+    ui.cellStretch()
+    if editor.tilemapLayer == 1 { ui.cellColor(0x777777FF) }
+    flags = editor.tilemapLayer == 1 ? ui::buttonFlagPushed : 0
+    if ui.button("FG", flags) { editor.tilemapLayer = 1 }
+    ui.cellStretch()
+    flags = editor.tilemapLayer == 0 ? ui::buttonFlagPushed : 0
+    if editor.tilemapLayer == 0 { ui.cellColor(0x777777FF) }
+    if ui.button("MG", flags) { editor.tilemapLayer = 0 }
+    ui.cellStretch()
+    if editor.tilemapLayer == -1 { ui.cellColor(0x777777FF) }
+    flags = editor.tilemapLayer == -1 ? ui::buttonFlagPushed : 0
+    if ui.button("BG", flags) { editor.tilemapLayer = -1 }
+    ui.cellStretch()
+    if ui.button("> <") {
+      editor.zoomToCenter()
     }
     ui.cellStretch()
     ui.cellSameSize()
@@ -888,26 +902,6 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     })
     if layersPressed {
       editor.tilemapShowAllLayers = !editor.tilemapShowAllLayers
-    }
-    ui.cellStretch()
-    ui.cellSameSize()
-    if editor.tilemapLayer == 1 { ui.cellColor(0x777777FF) }
-    flags = editor.tilemapLayer == 1 ? ui::buttonFlagPushed : 0
-    if ui.button("FG", flags) { editor.tilemapLayer = 1 }
-    ui.cellStretch()
-    ui.cellSameSize()
-    flags = editor.tilemapLayer == 0 ? ui::buttonFlagPushed : 0
-    if editor.tilemapLayer == 0 { ui.cellColor(0x777777FF) }
-    if ui.button("MG", flags) { editor.tilemapLayer = 0 }
-    ui.cellStretch()
-    ui.cellSameSize()
-    if editor.tilemapLayer == -1 { ui.cellColor(0x777777FF) }
-    flags = editor.tilemapLayer == -1 ? ui::buttonFlagPushed : 0
-    if ui.button("BG", flags) { editor.tilemapLayer = -1 }
-    ui.cellStretch()
-    ui.cellSameSize()
-    if ui.button("> <") {
-      editor.zoomToCenter()
     }
     if iconBtn("Exit", {48, 192, 48, 48}) {
       editor.doExit ^= true
@@ -1389,6 +1383,7 @@ fn editorLoadSession(editor: ^Editor, session: session::Session) {
 
 fn (editor: ^Editor) handleShortcuts*() {
   shortcuts::console(&implvtbl::VTBLImpl(editor.ui.vtbl).wm)
+  shortcuts::debug(&implvtbl::VTBLImpl(editor.ui.vtbl).wm)
   shortcuts::fullscreen()
   if input::isJustPressed(.escape) {
     if editor.entities.entitySelected != -1 {
