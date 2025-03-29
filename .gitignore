@@ -3,6 +3,10 @@
 
 # Compiled C module 
 *.umi
+*.o
+*.pdb
+*.ilk
+*.lib
 
 # Vim 
 *~
