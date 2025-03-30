@@ -598,7 +598,7 @@ fn putGrid(grid: ^grid::Grid, ui: ^ui::UI): GridInteraction {
     }
 
     hovered := false
-    if ui.isHovered() {
+    if ui.isHovered() || ui.isActive() {
       hovered = true
       wheel := input::getMouseScroll().y
       grid.zoomInto(updateZoom(grid.s.x, wheel/10.0), input::getMousePos())
