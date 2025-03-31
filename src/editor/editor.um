@@ -1019,6 +1019,7 @@ fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
     if ui.button("Plain Biscuit", uint(global::plainBiscuit)) {
       global::plainBiscuit = !global::plainBiscuit
     }
+    ui.label("(Removes visual\nclutter)")
   }, true)
 
   ui.window("Console", {
