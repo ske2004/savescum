@@ -32,7 +32,7 @@ type (
   }
 )
 
-fn initLogs();
+fn initLogs()
 
 fn init*(cfg: Config) {
   // TODO: Maybe have some sort of subsystems that we can initialize/deinitialize?
@@ -74,9 +74,8 @@ fn init*(cfg: Config) {
     world := world::fromTileset(tileset)
     worldData := world_data::load(world, util::readFileStr("data/spiel/sc_wip.csv").item0, false)
     game::start(worldData)
-    editor::setup()
     frameCb = { game::update(); game::draw() }
-    destroyCb = {}
+    destroyCb = { }
   }
 
   if !problem_screen::setupOnError(rl) {
