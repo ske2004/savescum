@@ -74,6 +74,17 @@ UMKA_EXPORT void neskeInit(UmkaStackSlot *params, UmkaStackSlot *result)
   umkaGetResult(params, result)->ptrVal = data;
 }
 
+UMKA_EXPORT void neskeGamepad(UmkaStackSlot *params, UmkaStackSlot *result)
+{
+  void *umka = result->ptrVal;
+  UmkaAPI *api = umkaGetAPI(result->ptrVal);
+
+  struct nrom *nrom = umkaGetParam(params, 0)->ptrVal;
+  struct controller_state *ctl = umkaGetParam(params, 1)->ptrVal;
+
+  nrom_update_controller(nrom, *ctl);
+}
+
 UMKA_EXPORT void neskeFrame(UmkaStackSlot *params, UmkaStackSlot *result)
 {
   void *umka = result->ptrVal;
@@ -81,8 +92,6 @@ UMKA_EXPORT void neskeFrame(UmkaStackSlot *params, UmkaStackSlot *result)
 
   struct nrom *nrom = umkaGetParam(params, 0)->ptrVal;
   
-  printf("Test %p\n", nrom);
-
   struct nrom_frame_result frame = nrom_frame(nrom);
 
   *((struct frame_result*)umkaGetResult(params, result)->ptrVal) = (struct frame_result){

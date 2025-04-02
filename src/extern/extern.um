@@ -10,4 +10,5 @@ type FrameResult* = struct {
 }
 
 fn neskeInit*(data: ^[]uint8): ^void
+fn neskeGamepad*(neske: ^void, input: ^[8]uint8): ^void
 fn neskeFrame*(neske: ^void): FrameResult

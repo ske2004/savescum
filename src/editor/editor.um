@@ -29,6 +29,7 @@ import (
   "../misc/util.um"
   "../game/game.um"
   "../misc/immcursor.um"
+  "../extern/extern.um"
   "../shared/payload_trigger.um"
   render_debug_info = "../dbg/render.um"
   "../gfx/drawcmd.um"
@@ -101,6 +102,14 @@ type (
     group:   uint
   }
 
+  Emulator = struct {
+    rompath: str
+    neske: ^void
+    crash: bool
+    image: image::Image
+    pixels: []uint32
+  }
+
   Editor = struct {
     // Misc
     doExit:          ^bool
@@ -128,6 +137,7 @@ type (
     dirty:                bool
     entitySearch:         str
     actionBuf:            ActionBuf
+    emulator:             Emulator
 
     // UI state
     ui: ^ui::UI
@@ -867,6 +877,7 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     windowBtn("Room", {48*2, 48*2, 48, 48})
     windowBtn("Tile Picker", {48*0, 48, 48, 48})
     windowBtn("Entity List", {48*0, 48*2, 48, 48})
+    windowBtn("Emulator", {48*0, 48*4, 48, 48})
 
     windowBtnIf("Entity Editor", {48*1, 48*2, 48, 48}, editor.entities.entitySelected != -1)
 
@@ -907,6 +918,22 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
       editor.doExit ^= true
     }
   })
+}
+
+pallete := []uint32{
+  0x626262ff, 0x001fb2ff, 0x2404c8ff, 0x5200b2ff, 0x730076ff, 
+  0x800024ff, 0x730b00ff, 0x522800ff, 0x244400ff, 0x005700ff, 
+  0x005c00ff, 0x005324ff, 0x003c76ff, 0x000000ff, 0x000000ff, 
+  0x000000ff, 0xabababff, 0x0d57ffff, 0x4b30ffff, 0x8a13ffff,
+  0xbc08d6ff, 0xd21269ff, 0xc72e00ff, 0x9d5400ff, 0x607b00ff,
+  0x209800ff, 0x00a300ff, 0x009942ff, 0x007db4ff, 0x000000ff,
+  0x000000ff, 0x000000ff, 0xffffffff, 0x53aeffff, 0x9085ffff,
+  0xd365ffff, 0xff57ffff, 0xff5dcfff, 0xff7757ff, 0xfa9e00ff,
+  0xbdc700ff, 0x7ae700ff, 0x43f611ff, 0x26ef7eff, 0x2cd5f6ff,
+  0x4e4e4eff, 0x000000ff, 0x000000ff, 0xffffffff, 0xb6e1ffff,
+  0xced1ffff, 0xe9c3ffff, 0xffbcffff, 0xffbdf4ff, 0xffc6c3ff,
+  0xffd59aff, 0xe9e681ff, 0xcef481ff, 0xb6fb9aff, 0xa9fac3ff,
+  0xa9f0f4ff, 0xb8b8b8ff, 0x000000ff, 0x000000ff
 }
 
 fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
@@ -1035,6 +1062,102 @@ fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
     })
 
     ui.popId()
+  })
+
+  ui.window("Emulator", |editor| {
+    ui.cellStretch()
+    ui.row(|editor| {
+      ui.cellJustify(1)
+      ui.textEditSingle("ROM Path", &editor.emulator.rompath)
+
+      if ui.button("Load") {
+        if editor.emulator.rompath == "" {
+          notification::put({.error, "Put a file name please"})
+          return
+        }
+
+        file, err := std::fopen(editor.emulator.rompath, "rb")
+        if err.code != 0 {
+          notification::put({.error, err.msg + " (Check if the path is correct)"})
+          return
+        }
+
+        data, err := std::freadall(file)
+        if err.code != 0 {
+          notification::put({.error, err.msg})
+          return
+        }
+
+        neske := extern::neskeInit(&[]uint8(data))
+        if neske == null {
+          notification::put({.error, "Can't initialize emulator state, check if the ROM is correct."})
+          return
+        }
+        editor.emulator.neske = neske
+
+        if len(editor.emulator.pixels) == 0 {
+          pixels := make([]uint32, 256*240)
+          image, err := image::mk(pixels, {256, 240})
+
+          if err.code != 0 {
+            notification::put({.error, err.msg})
+            return
+          }
+          
+          editor.emulator.pixels = pixels
+          editor.emulator.image = image
+        }
+      }
+    })
+
+    ui.cellJustify(1)
+    ui.cellStretch()
+    ui.col(|editor| {
+      ui.pushIdStr("Emulator")
+
+      if ui.isFocused() {
+        if editor.emulator.neske != null {
+          extern::neskeGamepad(editor.emulator.neske, &[8]uint8{
+            input::isPressed(.x) ? 1 : 0,
+            input::isPressed(.z) ? 1 : 0,
+            input::isPressed(.tab) ? 1 : 0,
+            input::isPressed(.enter) ? 1 : 0,
+            input::isPressed(.up) ? 1 : 0,
+            input::isPressed(.down) ? 1 : 0,
+            input::isPressed(.left) ? 1 : 0,
+            input::isPressed(.right) ? 1 : 0,
+          })
+        }
+      }
+
+      ui.popId()
+
+      ui.drawCustom(|editor| {
+        if editor.emulator.neske == null {
+          return
+        }
+
+        frame := extern::neskeFrame(editor.emulator.neske)
+
+        bestScale := floor(util::min(dest.w/256, dest.h/240))
+
+        if bestScale < 1 { bestScale = 1 }
+
+        if frame.status == 0 {
+          for i in frame.screen {
+            editor.emulator.pixels[i] = pallete[frame.screen[i]];
+          }
+          
+          editor.emulator.image.setData(editor.emulator.pixels, {256, 240})
+          editor.emulator.image.blit({0, 0, 256, 240}, {dest.x+(dest.w-256*bestScale)/2, dest.y+(dest.h-240*bestScale)/2, 256*bestScale, 240*bestScale})
+        } else {
+          editor.emulator.neske = null
+          notification::put({.error, "The emulator crashed, ooops"})
+          printf("Crash?\n")
+        }
+      })
+
+    })
   })
 }
 

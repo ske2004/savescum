@@ -2,6 +2,7 @@
 #define INCLUDED_NESKE_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 // RICOH.H
