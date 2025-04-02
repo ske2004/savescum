@@ -1,5 +1,36 @@
-import savescum = "src/savescum/savesc.um"
+import (
+  savescum = "src/savescum/savesc.um"
+  "std.um"
+  "image.um"
+  "window.um"
+  "src/extern/extern.um"
+)
 
 fn init*() {
-  savescum::init({mode: .editor})
+  file, err := std::fopen("P:/ROMS/smb.nes", "rb")
+  std::exitif(err)
+
+  data, err := std::freadall(file)
+  std::exitif(err)
+
+  neske := extern::neskeInit(&[]uint8(data))
+
+  pixels := make([]uint32, 256*240)
+
+  image, err := image::mk(pixels, {256, 240})
+
+  window::onFrame.register(|image, pixels, neske| {
+    frame := extern::neskeFrame(neske)
+
+    if frame.status == 0 {
+      for i in frame.screen {
+        pixels[i] = ((uint32(frame.screen[i])<<8)*5)|0xFF;
+      }
+
+      image.setData(pixels, {256, 240})
+      image.draw({p: {0, 0}, s: {10, 10}})
+    }
+  })
+
+  // savescum::init({mode: .editor})
 }

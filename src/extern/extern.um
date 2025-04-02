@@ -2,4 +2,12 @@
 // Using ./L should automatically compile the needed C files 
 //  and put everything into the correct folder.
 
-fn localstorage_get(): str
+type Neske* = struct{_:^void}
+
+type FrameResult* = struct {
+  status: int32
+  screen: [256*240]uint8
+}
+
+fn neskeInit*(data: ^[]uint8): ^void
+fn neskeFrame*(neske: ^void): FrameResult
