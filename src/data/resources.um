@@ -66,6 +66,3 @@ fn (loader: ^ResourceLoader) loadFont*(path: str, size: real, filter: image::Fil
   loader.cache[path] = theFont
   return theFont
 }
-
-// TODO: loadWorld. I don't need it right now as I want to create a world if it doesn't exist.
-//       But that's not going to be the case with the actual game where I must have the world.
