@@ -877,7 +877,7 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     windowBtn("Room", {48*2, 48*2, 48, 48})
     windowBtn("Tile Picker", {48*0, 48, 48, 48})
     windowBtn("Entity List", {48*0, 48*2, 48, 48})
-    windowBtn("Emulator", {48*0, 48*4, 48, 48})
+    windowBtn("FC Emulator", {48*0, 48*4, 48, 48})
 
     windowBtnIf("Entity Editor", {48*1, 48*2, 48, 48}, editor.entities.entitySelected != -1)
 
@@ -1064,7 +1064,7 @@ fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
     ui.popId()
   })
 
-  ui.window("Emulator", |editor| {
+  ui.window("FC Emulator", |editor| {
     ui.cellStretch()
     ui.row(|editor| {
       ui.cellJustify(1)
@@ -1113,7 +1113,7 @@ fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
     ui.cellJustify(1)
     ui.cellStretch()
     ui.col(|editor| {
-      ui.pushIdStr("Emulator")
+      ui.pushIdStr("FC Emulator")
 
       if ui.isFocused() {
         if editor.emulator.neske != null {
