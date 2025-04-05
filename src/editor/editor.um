@@ -117,6 +117,7 @@ type (
     showDebugInfo:   bool
     showUiDebugInfo: bool
     dimDebugInfo:    bool
+    mute:            bool
 
     // Visual data
     resources: EditorResources
@@ -1037,7 +1038,7 @@ fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
     })
   }
   
-  ui.window("Settings", {
+  ui.window("Settings", |editor| {
     ui.cellStretch()
     if ui.button("Reset UI") {
       implvtbl::VTBLImpl(ui.vtbl).wm.reset()
@@ -1047,6 +1048,10 @@ fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
       global::plainBiscuit = !global::plainBiscuit
     }
     ui.label("(Removes visual\nclutter)")
+    ui.cellStretch()
+    if ui.button("Mute", uint(editor.mute)) {
+      editor.mute = !editor.mute
+    }
   }, true)
 
   ui.window("Console", {
@@ -1634,16 +1639,18 @@ fn (editor: ^Editor) update*(uicb: fn(ui: ^ui::UI)) {
 
   editor.actionBuf.flush(editor)
 
-  for i, ev in editor.ui.events {
-    if ev.el.boxStyle == .button {
-      switch ev.kind {
-        case .pressed: sfx::startAtRandomPitch(editor.resources.pressFx)
-        case .released: sfx::startAtRandomPitch(editor.resources.releaseFx)
-      }
-    } else if ev.el.boxStyle == .buttonPushed {
-      switch ev.kind {
-        case .released: sfx::startAtRandomPitch(editor.resources.pressFx)
-        case .pressed: sfx::startAtRandomPitch(editor.resources.releaseFx)
+  if !editor.mute {
+    for i, ev in editor.ui.events {
+      if ev.el.boxStyle == .button {
+        switch ev.kind {
+          case .pressed: sfx::startAtRandomPitch(editor.resources.pressFx)
+          case .released: sfx::startAtRandomPitch(editor.resources.releaseFx)
+        }
+      } else if ev.el.boxStyle == .buttonPushed {
+        switch ev.kind {
+          case .released: sfx::startAtRandomPitch(editor.resources.pressFx)
+          case .pressed: sfx::startAtRandomPitch(editor.resources.releaseFx)
+        }
       }
     }
   }
