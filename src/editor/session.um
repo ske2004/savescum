@@ -21,6 +21,7 @@ type Session* = struct {
   plainBiscuit: bool
   windows: []windows::WindowState
   showUiDebug: bool
+  mute: bool
 }
 
 fn encVf2*(enc: ^jsonenc::Encoder, value: th::Vf2) {
@@ -72,6 +73,8 @@ fn save*(session: Session): str {
     encVf2(&enc, session.tileSelected)
     enc.putKey("plain_biscuit")
     enc.putVal(session.plainBiscuit)
+    enc.putKey("mute")
+    enc.putVal(session.mute)
     enc.putKey("show_ui_debug")
     enc.putVal(session.showUiDebug)
     enc.putKey("windows")
@@ -127,6 +130,10 @@ fn load*(sourceStr: str): Session {
   session.layerSelected = int(main["layer_selected"])
   session.tileSelected = decVf2(main["tile_selected"])
   session.plainBiscuit = bool(main["plain_biscuit"])
+
+  if b := ^bool(main["mute"]); b != null {
+    session.mute = b^
+  }
 
   if b := ^bool(main["show_ui_debug"]); b != null {
     session.showUiDebug = b^

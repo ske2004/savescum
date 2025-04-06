@@ -1488,6 +1488,7 @@ fn editorSaveSession(editor: ^Editor): session::Session {
   session.tileSelected  = editor.tileSelected
   session.showUiDebug   = editor.showUiDebugInfo
   session.plainBiscuit  = global::plainBiscuit
+  session.mute          = editor.mute
   session.windows       = implvtbl::VTBLImpl(editor.ui.vtbl).wm.saveState()
 
   return session
@@ -1506,6 +1507,7 @@ fn editorLoadSession(editor: ^Editor, session: session::Session) {
   editor.tileSelected         = session.tileSelected
   editor.showUiDebugInfo      = session.showUiDebug
   global::plainBiscuit        = session.plainBiscuit
+  editor.mute                 = session.mute
 
   implvtbl::VTBLImpl(editor.ui.vtbl).wm.loadState(session.windows)
 }
