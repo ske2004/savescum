@@ -1,4 +1,5 @@
 @echo off
+
 if "%1" == "" (
     echo put test name
     exit /b -1

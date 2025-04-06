@@ -1,2 +1,3 @@
-clang src/extern/jumbo.c -shared -o src/extern/extern.umi
+@echo off
 
+clang src/extern/jumbo.c -shared -o src/extern/extern.umi

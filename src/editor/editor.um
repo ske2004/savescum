@@ -118,6 +118,7 @@ type (
     showUiDebugInfo: bool
     dimDebugInfo:    bool
     mute:            bool
+    hideWindows:     bool
 
     // Visual data
     resources: EditorResources
@@ -581,6 +582,7 @@ fn loadRoom(editor: ^Editor, room: str) {
 type GridInteraction = struct {
   commit:  bool
   placed:  bool
+  panning: bool
   removed: bool
   pos:     th::Vf2
 }
@@ -593,6 +595,7 @@ fn putGrid(grid: ^grid::Grid, ui: ^ui::UI): GridInteraction {
 
     if ui.isActive() {
       if input::isPressed(.mouse2) || input::isPressed(.space) {
+        ps.panning = true
         grid.pan(input::getMouseDelta())
       }
       if input::isPressed(.mouse1) {
@@ -938,7 +941,9 @@ pallete := []uint32{
 }
 
 fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
-
+  if editor.hideWindows {
+    return
+  }
 
   if !editor.isPlaying {
     editor.putEntityEditor(ui)
@@ -1403,6 +1408,8 @@ fn (editor: ^Editor) putUi(ui: ^ui::UI) {
           ui.cellStretch()
           ui.cellJustify(1)
           interaction := putGrid(&editor.tilemapGrid, ui)
+
+          editor.hideWindows = interaction.panning
 
           editor.putWorldEntities(ui)
 
