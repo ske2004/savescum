@@ -760,8 +760,14 @@ fn (editor: ^Editor) putEntityList(ui: ^ui::UI) {
           ui.cellStretch()
           ui.cellJustify(1)
           if ui.button(ent.id) { action = .edit }
-          if ui.button("▲") { action = .moveUp }
-          if ui.button("▼") { action = .moveDown }
+          _action := &action
+          ui.cellStretch()
+          ui.col(|_action| {
+            ui.cellJustify(1)
+            if ui.button("▲") { _action ^= .moveUp }
+            ui.cellJustify(1)
+            if ui.button("▼") { _action ^= .moveDown }
+          })
 
           if input::isPressed(.shift) {
             if ui.button("␡") { action = .remove }
