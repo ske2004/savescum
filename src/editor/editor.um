@@ -976,24 +976,26 @@ fn (editor: ^Editor) putWindows(ui: ^ui::UI) {
     ui.window("Room", |editor| {
       ui.label("Room name: ")
 
-      ui.cellAlign(0.5)
+      ui.cellStretch()
+      ui.textEditSingle("Room name", &editor.potentialRoom)
+     
       ui.cellStretch()
       ui.row(|editor| {
         ui.cellJustify(1)
-        ui.textEditSingle("Room name", &editor.potentialRoom)
         if ui.button("Load") {
           loadRoom(editor, editor.potentialRoom)
         }
+
+        ui.cellJustify(1)
+        if ui.button("Save") {
+          editorSaveRoom(editor)
+        }
+        ui.cellJustify(1)
+        if ui.button("Reload") {
+          editorLoadRoom(editor, editor.currentRoom)
+        }
       })
 
-      ui.cellStretch()
-      if ui.button("Save") {
-        editorSaveRoom(editor)
-      }
-      ui.cellStretch()
-      if ui.button("Reload") {
-        editorLoadRoom(editor, editor.currentRoom)
-      }
     })
 
     editor.putQuickAdd(ui)
