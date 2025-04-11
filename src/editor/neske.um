@@ -1,0 +1,92 @@
+import (
+  "../extern/extern.um"
+  "std.um"
+  "image.um"
+  "input.um"
+)
+
+pallete := []uint32{
+  0x626262ff, 0x001fb2ff, 0x2404c8ff, 0x5200b2ff, 0x730076ff, 
+  0x800024ff, 0x730b00ff, 0x522800ff, 0x244400ff, 0x005700ff, 
+  0x005c00ff, 0x005324ff, 0x003c76ff, 0x000000ff, 0x000000ff, 
+  0x000000ff, 0xabababff, 0x0d57ffff, 0x4b30ffff, 0x8a13ffff,
+  0xbc08d6ff, 0xd21269ff, 0xc72e00ff, 0x9d5400ff, 0x607b00ff,
+  0x209800ff, 0x00a300ff, 0x009942ff, 0x007db4ff, 0x000000ff,
+  0x000000ff, 0x000000ff, 0xffffffff, 0x53aeffff, 0x9085ffff,
+  0xd365ffff, 0xff57ffff, 0xff5dcfff, 0xff7757ff, 0xfa9e00ff,
+  0xbdc700ff, 0x7ae700ff, 0x43f611ff, 0x26ef7eff, 0x2cd5f6ff,
+  0x4e4e4eff, 0x000000ff, 0x000000ff, 0xffffffff, 0xb6e1ffff,
+  0xced1ffff, 0xe9c3ffff, 0xffbcffff, 0xffbdf4ff, 0xffc6c3ff,
+  0xffd59aff, 0xe9e681ff, 0xcef481ff, 0xb6fb9aff, 0xa9fac3ff,
+  0xa9f0f4ff, 0xb8b8b8ff, 0x000000ff, 0x000000ff
+}
+
+type Neske* = struct {
+  state: ^void
+  pixels: []uint32
+  image: image::Image
+}
+
+fn mk*(path: str): (Neske, std::Err) {
+  if path == "" {
+    return Neske{}, std::Err{code: 1, msg: "Put a file name please"}
+  }
+
+  file, err := std::fopen(path, "rb")
+  if err.code != 0 {
+    return Neske{}, err
+  }
+
+  data, err := std::freadall(file)
+  if err.code != 0 {
+    return Neske{}, err
+  }
+
+  neske := extern::neskeInit(&[]uint8(data))
+  if neske == null {
+    return Neske{}, std::Err{code: 1, msg: "Can't initialize emulator state, check if the ROM is correct."}
+  }
+
+  pixels := make([]uint32, 256*240)
+  image, err := image::mk(pixels, {256, 240})
+  if err.code != 0 {
+    return Neske{}, err
+  }
+
+  return Neske{state: neske, pixels: pixels, image: image}, {}
+}
+
+fn (neske: ^Neske) valid*(): bool {
+  return neske.state != null
+}
+
+fn (neske: ^Neske) handleInput*() {
+  input := [8]uint8{
+    uint8(input::isPressed(.x)),
+    uint8(input::isPressed(.z)),
+    uint8(input::isPressed(.tab)),
+    uint8(input::isPressed(.enter)),
+    uint8(input::isPressed(.up)),
+    uint8(input::isPressed(.down)),
+    uint8(input::isPressed(.left)),
+    uint8(input::isPressed(.right)),
+  }
+
+  extern::neskeGamepad(neske.state, &input)
+}
+
+fn (neske: ^Neske) getFrame*(): (image::Image, std::Err) {
+  frame := extern::neskeFrame(neske.state)
+  if frame.status != 0 {
+    neske.state = null
+    return image::Image{}, std::Err{code: 1, msg: "Crashed lol"}
+  }
+
+  for i in frame.screen {
+    neske.pixels[i] = pallete[frame.screen[i]]
+  }
+
+  neske.image.setData(neske.pixels, {256, 240})
+
+  return neske.image, {}
+}
