@@ -66,6 +66,12 @@ type (
     pos: th::Vf2
     scale: real
   }
+
+  PALState = enum {
+    stand
+    jump
+    fall
+  }
 )
 
 // TPS 250
@@ -83,9 +89,6 @@ cropLeverWaterOn   := rect::Rect{320, 128, 64, 64}
 cropLeverWaterOff  := rect::Rect{320, 192, 64, 64}
 cropControls       := rect::Rect{0, 128, 256, 256}
 
-palStateStand := 0
-palStateJump  := 1
-palStateFall  := 2
 palStandRect  := rect::Rect{128, 0, 128, 128}
 palFaceRect   := rect::Rect{0, 0, 128, 128}
 palMouthRect  := rect::Rect{41, 52, 22, 7}
@@ -763,20 +766,20 @@ fn drawPAL(state: int) {
   drawPAL2(state, &pal, 0xFFFFFFFF)
 }
 
-fn getPALSpriteState(pal: PAL): int {
+fn getPALSpriteState(pal: PAL): PALState {
   if pal.ent.vel.y > 0 {
-    return palStateFall
+    return .fall
   } else if !pal.ent.onGround {
-    return palStateJump
+    return .jump
   } else if pal.walkTime == 0.0 {
-    return palStateStand
+    return .stand 
   } else {
     switch trunc(pal.walkTime*6.0) % 2 {
-      case 0: return palStateJump
-      case 1: return palStateStand
+      case 0: return .jump 
+      case 1: return .stand
     }
   }
-  return -1
+  return .stand
 }
 
 fn drawEntities() {
@@ -784,7 +787,7 @@ fn drawEntities() {
     drawEntity(entity)
   }
 
-  drawPAL(getPALSpriteState(pal))
+  drawPAL(int(getPALSpriteState(pal)))
 }
 
 fn drawEntityDebugRects() {
@@ -1165,9 +1168,9 @@ fn draw*() {
 
   for i, state in palSaves {
     if !entCheckCollision(&state.ent) {
-      drawPAL2(getPALSpriteState(state), &state, 0xFFFFFF44)
+      drawPAL2(int(getPALSpriteState(state)), &state, 0xFFFFFF44)
     } else {
-      drawPAL2(getPALSpriteState(state), &state, 0xFF000044)
+      drawPAL2(int(getPALSpriteState(state)), &state, 0xFF000044)
     }
     drawObjectsAt(state)
   }
