@@ -569,6 +569,7 @@ fn (editor: ^Editor) zoomToCenter() {
 
 
 fn loadRoom(editor: ^Editor, room: str) {
+  editor.actionBuf = {}
   editor.currentRoom = room
   editor.potentialRoom = room
   editorLoadRoom(editor, room)
