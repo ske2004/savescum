@@ -1206,10 +1206,6 @@ fn (editor: ^Editor) putWorldEntities(ui: ^ui::UI) {
     uiVisRect.w /= ui.io.scale
     uiVisRect.h /= ui.io.scale
 
-    // if !coll::rectToRect(uiVisRect, ui.io.screen) {
-    //   continue
-    // }
-
     // @FIXME: Initializing tag set every time we render an entity is not efficient at all.
     tags_ := tagset::mk(ent.tags)
     tags := new(tagset::TagSet, tags_)
