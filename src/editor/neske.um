@@ -61,18 +61,20 @@ fn (neske: ^Neske) valid*(): bool {
 }
 
 fn (neske: ^Neske) handleInput*() {
-  input := [8]uint8{
-    uint8(input::isPressed(.x)),
-    uint8(input::isPressed(.z)),
-    uint8(input::isPressed(.tab)),
-    uint8(input::isPressed(.enter)),
-    uint8(input::isPressed(.up)),
-    uint8(input::isPressed(.down)),
-    uint8(input::isPressed(.left)),
-    uint8(input::isPressed(.right)),
-  }
+  if neske.valid() {
+    input := [8]uint8{
+      uint8(input::isPressed(.x)),
+      uint8(input::isPressed(.z)),
+      uint8(input::isPressed(.tab)),
+      uint8(input::isPressed(.enter)),
+      uint8(input::isPressed(.up)),
+      uint8(input::isPressed(.down)),
+      uint8(input::isPressed(.left)),
+      uint8(input::isPressed(.right)),
+    }
 
-  extern::neskeGamepad(neske.state, &input)
+    extern::neskeGamepad(neske.state, &input)
+  }
 }
 
 fn (neske: ^Neske) getFrame*(): (image::Image, std::Err) {
