@@ -36,7 +36,7 @@ fn init*() {
 
   window::setup("Hello", 640, 480)
   ctx = drawcmd::mk()
-  font1 = font::load("data/font/FairfaxHD.ttf", 16, .nearest).item0
+  font1 = font::load("data/font/Unifont.ttf", 16, .nearest).item0
   font2 = font::load("data/font/Roboto.ttf", 16).item0
   image1 = image::load("data/img/test.png").item0
   image2 = image::load("data/img/test.png").item0

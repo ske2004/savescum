@@ -652,7 +652,7 @@ fn (editor: ^Editor) putNotifications(ui: ^ui::UI) {
       ui.row(|n, editor| {
         ui.boxStyle(.notification)
         // @MARK(UiResourceManagment)
-        ui.img2(editor.resources.toolbarIcons, {24*int(n.info.icon), 144, 24, 24})
+        ui.img2(editor.resources.toolbarIcons, {16*int(n.info.icon), 96, 16, 16})
         ui.label(" ")
         ui.label(n.info.message)
       })
@@ -785,7 +785,7 @@ fn (editor: ^Editor) putEntityList(ui: ^ui::UI) {
 
     // @HACK: There should be a better way to put elements on the titlebar.
     r := implvtbl::VTBLImpl(ui.vtbl).wm.windows["Entity List"].viewRect
-    buttonRect := rect::Rect{r.x+r.w-34-5, r.y+5, 34, 34}
+    buttonRect := rect::Rect{r.x+r.w-22-5, r.y+5, 22, 22}
     ui.cellUnclip()
     ui.cellRect(buttonRect)
     if ui.button("+") {
@@ -886,24 +886,24 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     }
 
     // @TODO: Remove the hardcoded texture regions.
-    if iconBtn("Play", {48, 48, 48, 48}, editor.isPlaying ? ui::buttonFlagPushed : 0) {
+    if iconBtn("Play", {32, 32, 32, 32}, editor.isPlaying ? ui::buttonFlagPushed : 0) {
       editorToggleGame(editor)
     }
 
-    windowBtn("Console", {48, 0, 48, 48})
-    windowBtn("Settings", {96, 192, 48, 48})
+    windowBtn("Console", {32, 0, 32, 32})
+    windowBtn("Settings", {64, 128, 32, 32})
 
     if editor.isPlaying {
-      windowBtn("Level Select", {48*3, 48*3, 48, 48})
+      windowBtn("Level Select", {32*3, 32*3, 32, 32})
       return
     }
 
-    windowBtn("Room", {48*2, 48*2, 48, 48})
-    windowBtn("Tile Picker", {48*0, 48, 48, 48})
-    windowBtn("Entity List", {48*0, 48*2, 48, 48})
-    windowBtn("FC Emulator", {48*0, 48*4, 48, 48})
+    windowBtn("Room", {32*2, 32*2, 32, 32})
+    windowBtn("Tile Picker", {32*0, 32, 32, 32})
+    windowBtn("Entity List", {32*0, 32*2, 32, 32})
+    windowBtn("FC Emulator", {32*0, 32*4, 32, 32})
 
-    windowBtnIf("Entity Editor", {48*1, 48*2, 48, 48}, editor.entities.entitySelected != -1)
+    windowBtnIf("Entity Editor", {32*1, 32*2, 32, 32}, editor.entities.entitySelected != -1)
 
     flags := editor.entityBypass ? ui::buttonFlagPushed : 0
     ui.spring(1)
@@ -919,7 +919,7 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     ui.cellStretch()
     selectBtn(ui, "BG", &editor.tilemapLayer, -1)
     ui.cellStretch()
-    if ui.button("> <") {
+    if ui.button("><") {
       editor.zoomToCenter()
     }
     ui.cellStretch()
@@ -932,7 +932,7 @@ fn (editor: ^Editor) putToolbar(ui: ^ui::UI) {
     if layersPressed {
       editor.tilemapShowAllLayers = !editor.tilemapShowAllLayers
     }
-    if iconBtn("Exit", {48, 192, 48, 48}) {
+    if iconBtn("Exit", {32, 128, 32, 32}) {
       editor.doExit ^= true
     }
   })
@@ -1420,7 +1420,7 @@ fn (editor: ^Editor) putUi(ui: ^ui::UI) {
       ui.label(sprintf("ROOM: %s | ", editor.currentRoom))
       if editor.dirty {
         ui.cellColor(0xFF0000FF)
-        ui.label("Yo, save it")
+        ui.label("UNSAVED")
       }
     })
   }, ui.io.screen.h)
@@ -1449,7 +1449,7 @@ fn editorSaveSession(editor: ^Editor): session::Session {
 
 fn editorLoadSession(editor: ^Editor, session: session::Session) {
   loadRoom(editor, session.room)
-  scale := window::getDpiScaleFactor()-0.25
+  scale := window::getDpiScaleFactor()
   editor.tilemapGrid.p        = session.pan
   editor.tilemapGrid.gs       = scale
   editor.tilemapGrid.s.x      = session.scale*scale
@@ -1540,7 +1540,7 @@ fn mk*(ui: ^ui::UI, rl: ^resources::ResourceLoader, doExit: ^bool): ^Editor {
   // @TODO: Since we update DPI, we need to also update the resources.
   resources := EditorResources {
     tilesetImage: rl.loadImage("data/img/ts_sky.png", .linear),
-    toolbarIcons: rl.loadImage("data/img/ui/1_5x/icons.png", .linear),
+    toolbarIcons: rl.loadImage("data/img/ui/1_0x/icons.png", .linear),
     superHotFire: rl.loadImage("data/img/SUPER HOT FIRE WTF.png", .linear),
     pressFx:      rl.loadAudio("data/audio/sfx/press.ogg"),
     releaseFx:    rl.loadAudio("data/audio/sfx/release.ogg"),
@@ -1549,7 +1549,7 @@ fn mk*(ui: ^ui::UI, rl: ^resources::ResourceLoader, doExit: ^bool): ^Editor {
 
   tileset := atlas::mk(resources.tilesetImage, {4, 9})
 
-  scale := window::getDpiScaleFactor()-0.25
+  scale := window::getDpiScaleFactor()
 
   editor := &Editor{
     doExit:               doExit,
@@ -1586,7 +1586,7 @@ fn (editor: ^Editor) update*(uicb: fn(ui: ^ui::UI)) {
 
   std::srand(std::time())
 
-  editor.ui.io.scale = window::getDpiScaleFactor()/1.5
+  editor.ui.io.scale = window::getDpiScaleFactor()
   editor.ui.pass(|uicb, editor| {
     editor.putUi(ui)
     uicb(ui)

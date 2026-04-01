@@ -128,7 +128,7 @@ fn (it: ^WindowManager) displayWindow(w: ^Window, ui: ^ui::UI) {
   w.highlight = util::max(0, w.highlight-th::delta/1000.0)
 
   ui.cellRect(rect)
-  ui.cellPadding(5)
+  ui.cellPadding(3)
   ui.col(|it, w, rect, newRectPtr| {
     ui.drawCustom(|w, ui| {
       canvas::drawRectLines(color::alpha(0xFFFF00FF, w.highlight), dest, 4*ui.io.scale)

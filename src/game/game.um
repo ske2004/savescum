@@ -603,7 +603,7 @@ fn init*(rl: ^resources::ResourceLoader) {
   palLand = rl.loadAudio("data/audio/sfx/pal_land.ogg")
 
   // bgAudio.setLooping(true)
-  defaultFont = rl.loadFont("data/font/FairfaxHD.ttf", 24*2, .linear)
+  defaultFont = rl.loadFont("data/font/Unifont.ttf", 16, .nearest)
   imgObj = rl.loadImage("data/img/obj_interactive.png", .linear)
   imgPAL = rl.loadImage("data/img/chr_pal.png", .linear)
 }

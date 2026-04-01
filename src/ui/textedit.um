@@ -88,7 +88,7 @@ fn putSingleLine*(ui: ^ui::UI, name: str, value: ^str): bool {
   dirty := false
   dirtyPtr := &dirty
 
-  ui.cellPadding(10)
+  ui.cellPadding(5)
   ui.row(|dirtyPtr, name, value| {
     ui.boxStyle(.input)
     ui.pushIdStr(name)

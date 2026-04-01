@@ -743,7 +743,7 @@ fn (ui: ^UI) button*(text: str, flags: uint = 0): bool {
     ui.spring(1)
     ui.label(text)
     ui.spring(1)
-  }, flags, 10)
+  }, flags, 5)
 }
 
 fn (ui: ^UI) window*(title: str, cb: fn(ui: ^UI), hidden: bool = false) {

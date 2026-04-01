@@ -25,7 +25,7 @@ fn pushText(text: str, color: uint32 = th::white) {
 
 fn init() {
   // Try to load a better font, the fallback will be used otherwise.
-  f, err := font::load("data/font/FairfaxHD.ttf", 16*window::getDpiScaleFactor())
+  f, err := font::load("data/font/Unifont.ttf", 16*window::getDpiScaleFactor())
 
   if err.code != 0 {
     f = canvas::pixelFont

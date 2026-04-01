@@ -20,17 +20,17 @@ fn setup*(resources: UiResources): ^ui::UI {
 
   // @TODO: Re add the april fools joke :V
   ui.setBoxTheme(.button, {
-    normal: themer::mkNinepatch(resources.bevelImage, {0, 0, 30, 30}, {5, 5, 19, 19}),
-    pressed: themer::mkNinepatch(resources.bevelImage, {30, 0, 30, 30}, {4, 4, 21, 21})
+    normal: themer::mkNinepatch(resources.bevelImage, {0, 0, 20, 20}, {2, 2, 15, 14}),
+    pressed: themer::mkNinepatch(resources.bevelImage, {20, 0, 20, 20}, {2, 2, 15, 15})
   })
   ui.setBoxCursor(.button, .finger)
   ui.setBoxTheme(.input, {
-    normal: themer::mkNinepatch(resources.bevelImage, {30, 0, 30, 30}, {4, 4, 21, 21})
+    normal: themer::mkNinepatch(resources.bevelImage, {20, 20, 20, 20}, {4, 4, 11, 11})
   })
   ui.setBoxCursor(.input, .iBeam)
   ui.setBoxTheme(.buttonPushed, {
-    normal: themer::mkNinepatch(resources.bevelImage, {30, 0, 30, 30}, {4, 4, 21, 21}),
-    pressed: themer::mkNinepatch(resources.bevelImage, {0, 0, 30, 30}, {5, 5, 19, 19})
+    normal: themer::mkNinepatch(resources.bevelImage, {20, 0, 20, 20}, {2, 2, 15, 15}),
+    pressed: themer::mkNinepatch(resources.bevelImage, {0, 0, 20, 20}, {2, 2, 15, 14})
   })
   ui.setBoxCursor(.buttonPushed, .finger)
 
@@ -40,22 +40,22 @@ fn setup*(resources: UiResources): ^ui::UI {
   ui.setBoxCursor(.resizer, .sizeNWSE)
 
   ui.setBoxTheme(.toolbar, {
-    normal: themer::mkNinepatch(resources.bevelImage, {90, 30, 30, 30}, {4, 4, 21, 21})
+    normal: themer::mkNinepatch(resources.bevelImage, {60, 20, 20, 20}, {4, 4, 11, 11})
   })
   ui.setBoxTheme(.titlebar, {
-    normal: themer::mkNinepatch(resources.bevelImage, {0, 30, 30, 30}, {1, 1, 28, 28})
+    normal: themer::mkNinepatch(resources.bevelImage, {0, 20, 20, 20}, {1, 1, 18, 18})
   })
   ui.setBoxTheme(.window, {
     normal: themer::mkCustom(|resources| {
-      resources.glow.drawNinepatch({0, 0, 48, 48}, {16, 16, 16, 16}, dest.shrink({-16,-16}), 0x00005588) // Shadow
-      resources.bevelImage.drawNinepatch({30, 30, 30, 30}, {6, 6, 18, 18}, dest)
+      resources.glow.drawNinepatch({0, 0, 48, 48}, {16, 16, 16, 16}, dest.shrink({-16,-16}), 0x00000044) // Shadow
+      resources.bevelImage.drawNinepatch({20, 20, 20, 20}, {6, 6, 8, 8}, dest)
     })
   })
 
   ui.setBoxTheme(.notification, {
     normal: themer::mkCustom(|resources| {
-      resources.glow.drawNinepatch({0, 0, 48, 48}, {16, 16, 16, 16}, dest.shrink({-16,-16}), 0x00005588) // Shadow
-      resources.bevelImage.drawNinepatch({0, 60, 30, 30}, {6, 6, 18, 18}, dest)
+      resources.glow.drawNinepatch({0, 0, 48, 48}, {16, 16, 16, 16}, dest.shrink({-16,-16}), 0x00000044) // Shadow
+      resources.bevelImage.drawNinepatch({40, 20, 20, 20}, {2, 2, 16, 16}, dest)
     })
   })
 

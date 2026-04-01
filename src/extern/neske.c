@@ -52,18 +52,18 @@ UMKA_EXPORT void neskeInit(UmkaStackSlot *params, UmkaStackSlot *result)
   void *umka = result->ptrVal;
   UmkaAPI *api = umkaGetAPI(umka);
 
-  UmkaDynArray(uint8_t) *source = umkaGetParam(params, 0)->ptrVal;
+  UmkaDynArray(uint8_t) *source = api->umkaGetParam(params, 0)->ptrVal;
   size_t size = api->umkaGetDynArrayLen(source);
 
   if (size < 16) {
-    umkaGetResult(params, result)->ptrVal = 0;
+    api->umkaGetResult(params, result)->ptrVal = 0;
     return;
   }
 
   struct nrom nrom = { 0 };
   nrom.apu_mux = _getDummyMux();
   if (nrom_load(source->data, &nrom)) {
-    umkaGetResult(params, result)->ptrVal = 0;
+    api->umkaGetResult(params, result)->ptrVal = 0;
     return;
   }
 
@@ -71,7 +71,7 @@ UMKA_EXPORT void neskeInit(UmkaStackSlot *params, UmkaStackSlot *result)
 
   memcpy(data, &nrom, sizeof nrom);
 
-  umkaGetResult(params, result)->ptrVal = data;
+  api->umkaGetResult(params, result)->ptrVal = data;
 }
 
 UMKA_EXPORT void neskeGamepad(UmkaStackSlot *params, UmkaStackSlot *result)
@@ -79,8 +79,8 @@ UMKA_EXPORT void neskeGamepad(UmkaStackSlot *params, UmkaStackSlot *result)
   void *umka = result->ptrVal;
   UmkaAPI *api = umkaGetAPI(result->ptrVal);
 
-  struct nrom *nrom = umkaGetParam(params, 0)->ptrVal;
-  struct controller_state *ctl = umkaGetParam(params, 1)->ptrVal;
+  struct nrom *nrom = api->umkaGetParam(params, 0)->ptrVal;
+  struct controller_state *ctl = api->umkaGetParam(params, 1)->ptrVal;
 
   nrom_update_controller(nrom, *ctl);
 }
@@ -90,11 +90,11 @@ UMKA_EXPORT void neskeFrame(UmkaStackSlot *params, UmkaStackSlot *result)
   void *umka = result->ptrVal;
   UmkaAPI *api = umkaGetAPI(result->ptrVal);
 
-  struct nrom *nrom = umkaGetParam(params, 0)->ptrVal;
+  struct nrom *nrom = api->umkaGetParam(params, 0)->ptrVal;
   
   struct nrom_frame_result frame = nrom_frame(nrom);
 
-  *((struct frame_result*)umkaGetResult(params, result)->ptrVal) = (struct frame_result){
+  *((struct frame_result*)api->umkaGetResult(params, result)->ptrVal) = (struct frame_result){
     nrom->cpu.crash ? 1 : 0,
     frame
   };
