@@ -1,7 +1,7 @@
 import "rect.um"
 
 const (
-  version* = "7.5%"
+  version* = "1.5.6_umx JQ 5%"
 )
 
 var (

@@ -1,4 +1,5 @@
 // @TODO: Make the element struct smaller in size
+
 // @TODO: Hovering effects?
 
 import (
@@ -150,6 +151,7 @@ type (
     root:      ^El
     cell:      Cell
     events:    []Event
+    manifest:  map[str]fn(ui: ^UI, obj: umx)
   }
 )
 
@@ -173,6 +175,18 @@ fn mk*(vtbl: VTBL): UI {
     io: {
       scale: 1.0
     }
+  }
+}
+
+fn (ui: ^UI) register*(tag: str, callback: fn(ui: ^UI, obj: umx)) {
+  ui.manifest[tag] = callback
+}
+
+fn (ui: ^UI) put*(obj: umx) {
+  if validkey(ui.manifest, obj.tag) {
+    ui.manifest[obj.tag](ui, obj)
+  } else {
+    std::assert(false, "Invalid manifest key")
   }
 }
 
@@ -390,7 +404,7 @@ fn (ui: ^UI) render(el: ^El, depth: int, scissor: rect::Rect) {
   for i, child in el.children {
     // @TODO: This is really cumbersome, tophat's scissor rect implementation automatically keeps track of intersections, but I can't break out of it.
     if child.cell.flags & cellUnclipped != 0 {
-      for i := 0; i < depth; i++ {
+      for j := 0; j < depth; j++ {
         canvas::endScissor()
       }
 

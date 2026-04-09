@@ -1,6 +1,7 @@
 import (
   "image.um"
   "font.um"
+  "rect.um"
 
   "../ui/ui.um"
   "implvtbl.um"
@@ -57,6 +58,15 @@ fn setup*(resources: UiResources): ^ui::UI {
       resources.glow.drawNinepatch({0, 0, 48, 48}, {16, 16, 16, 16}, dest.shrink({-16,-16}), 0x00000044) // Shadow
       resources.bevelImage.drawNinepatch({40, 20, 20, 20}, {2, 2, 16, 16}, dest)
     })
+  })
+
+  icons := map[str]rect::Rect {
+    "close": {2, 45, 18, 10},
+    "add": {22, 43, 22, 24},
+  }
+
+  ui.register("Icon", |resources, icons| {
+    ui.img2(resources.bevelImage, icons[str(obj.props["id"])])
   })
 
   return ui

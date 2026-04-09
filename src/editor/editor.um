@@ -29,7 +29,6 @@ import (
   "../misc/util.um"
   "../game/game.um"
   "../misc/immcursor.um"
-  "../extern/extern.um"
   "../shared/payload_trigger.um"
   render_debug_info = "../dbg/render.um"
   "../gfx/drawcmd.um"
@@ -785,10 +784,10 @@ fn (editor: ^Editor) putEntityList(ui: ^ui::UI) {
 
     // @HACK: There should be a better way to put elements on the titlebar.
     r := implvtbl::VTBLImpl(ui.vtbl).wm.windows["Entity List"].viewRect
-    buttonRect := rect::Rect{r.x+r.w-22-5, r.y+5, 22, 22}
+    buttonRect := rect::Rect{r.x+r.w-22-3, r.y+3, 22, 22}
     ui.cellUnclip()
     ui.cellRect(buttonRect)
-    if ui.button("+") {
+    if ui.button2("add", { ui.put(<Icon id="add"/>) }, 0, 2) {
       appendEntity(editor, initEntityAtCenter(editor, makeRandomEntity(allocateEntityId(editor.entities.list))))
       editor.dirty = true
       _scrollbar.overflow = true
@@ -1613,6 +1612,7 @@ fn (editor: ^Editor) update*(uicb: fn(ui: ^ui::UI)) {
   if editor.showDebugInfo {
     editor.dimDebugInfo = render_debug_info::renderDebugInfo(editor.resources.mainFont, {
       displays: {
+        { "FPS", fps::getFps()  },
         { "TPS", 1000.0/game::updateStepMs  },
         { "Room", editor.currentRoom },
         { "Frameskip", trunc(game::frameSkips) },

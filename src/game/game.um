@@ -20,6 +20,7 @@ import (
   "font.um"
   "std.um"
   "audio.um"
+  "../ui/target.um"
   "../ui/notification.um"
   "controls.um"
 )
@@ -97,6 +98,7 @@ var (
   // Resources
   imgObj: image::Image
   imgPAL: image::Image
+  imgNTSC: image::Image
   defaultFont: font::Font
   bgAudio: audio::Sound
   palStep: audio::Sound
@@ -115,7 +117,8 @@ var (
   palBufferState: PAL
   palResetPoint: th::Vf2
   palInsideStatic: bool
-  palNoSaveStack: bool
+  palNoSaveStack: bool 
+  palSwap: bool 
 
   // World
   metaBoulders: bool
@@ -582,7 +585,7 @@ fn start*(worldData: world_data::WorldData): std::Err {
     notification::put({.info, "Welcome to the demo!\nPress 'Z' to load the last save,\n      'X' to save the current state,\n      'R' to reset the level.\n      'C' to preview a load."})
     firstTime = false
   }
-
+  
   return {}
 }
 
@@ -606,6 +609,7 @@ fn init*(rl: ^resources::ResourceLoader) {
   defaultFont = rl.loadFont("data/font/Unifont.ttf", 16, .nearest)
   imgObj = rl.loadImage("data/img/obj_interactive.png", .linear)
   imgPAL = rl.loadImage("data/img/chr_pal.png", .linear)
+  imgNTSC = rl.loadImage("data/img/chr_ntsc.png", .linear)
 }
 
 fn updateEntities() {
@@ -713,7 +717,7 @@ fn drawPAL2(state: int, pal: ^PAL, tint: uint32) {
   if pal.loadTime < 0 {
     pal.visRect = pal.ent.rect
   } else {
-    pal.visRect = rerp::iRect(pal.visRect, pal.ent.rect, th::delta/100.0)
+    pal.visRect = rerp::iRect(pal.visRect, pal.ent.rect, th::delta/50.0)
   }
 
   at := pal.visRect.getPos()
@@ -741,10 +745,13 @@ fn drawPAL2(state: int, pal: ^PAL, tint: uint32) {
   palMouthDestRect.h -= 1
   palMouthDestRect.w += 1
 
-  imgPAL.blit(bodyRect, palDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
-  imgPAL.blit(palFaceRect, palDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
+
+  img := palSwap != (tint != 0xFFFFFFFF) ? imgNTSC : imgPAL
+
+  img.blit(bodyRect, palDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
+  img.blit(palFaceRect, palDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
   if palFrown {
-    imgPAL.blit(palMouthRect, palMouthDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
+    img.blit(palMouthRect, palMouthDestRect, tint, pal.rotTime, palDestRect.getDims().divf(2))
   }
   if showDebug {
     canvas::drawText(sprintf("%d %d", trunc(at.x/32), trunc(at.y/32)), palDestRect.getPos(), th::red, 1)
@@ -914,22 +921,27 @@ fn update*() {
   if !lockInput {
     if !noSaveLoad {
       if controls.isJustPressed(.load) {
-        
+
         if len(palSaves) > 0 {
+          palPreserve := pal
           for i := len(palSaves)-1; i >= 0; i-- {
             if !entCheckCollision(&palSaves[i].ent) {
               loadStateToChar(palSaves[i])
+              target::putTarget(camera.mapRect(pal.visRect.shrink({-10, -10})))
               palSaves = delete(palSaves, i)
+              palSaves = append(palSaves, palPreserve)
+              palSwap = !palSwap
               break
             }
           }
         }
-
       }
 
       if controls.isJustPressed(.save) {
-        if !(palNoSaveStack && len(palSaves) > 0) {
+        if len(palSaves) == 0 {
           palSaves = append(palSaves, pal)
+        } else {
+          palSaves = {}
         }
       }
 
@@ -982,10 +994,10 @@ fn update*() {
       if ent.tags.isSet("force_load") {
         if coll::rectToRect(ent.rect, pal.ent.rect) {
           if len(palSaves) > 0 {
-            for i := len(palSaves)-1; i >= 0; i-- {
-              if !entCheckCollision(&palSaves[i].ent) {
-                loadStateToChar(palSaves[i])
-                palSaves = delete(palSaves, i)
+            for j := len(palSaves)-1; j >= 0; j-- {
+              if !entCheckCollision(&palSaves[j].ent) {
+                loadStateToChar(palSaves[j])
+                palSaves = delete(palSaves, j)
                 // FIXME: This is a hack
                 return
               }

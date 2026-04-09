@@ -74,8 +74,8 @@ fn separateChar*(words: []str, c: char): []str {
   result := []str{}
   for i, word in words {
     lines := splitBy(word, c)
-    for i, line in lines {
-      if i != 0 {
+    for j, line in lines {
+      if j != 0 {
         result = append(result, c)
       }
       result = append(result, line)

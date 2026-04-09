@@ -1,0 +1,57 @@
+import (
+  "image.um"
+  "rect.um"
+  "th.um"
+  "color.um"
+  "../gfx/rerp.um"
+)
+
+type Target = struct {
+  rect: rect::Rect
+  t: real
+}
+
+var (
+  targets: []Target
+  targetImage: image::Image
+)
+
+fn init*(targetImage_: image::Image) {
+  targetImage = targetImage_
+}
+
+fn putTarget*(rect: rect::Rect) {
+  targets = append(targets, {rect, 0})
+}
+
+fn updateAndDraw*() {
+  newTargets := []Target{}
+
+  for i, target^ in targets {
+    target.t += th::delta/1000.0*5
+    if target.t >= 2.0 {
+      continue
+    }
+
+    newTargets = append(newTargets, target^)
+
+    t := target.t > 1.0 ? 1.0 : target.t
+    a := target.t > 1.0 ? (1-(target.t - 1.0)) : 1.0
+    tt := 1-(t*t*t*t*t*t)
+
+    rect := target.rect
+    rect.x -= (50) * tt
+    rect.y -= (50) * tt
+    rect.w += (50*2) * tt
+    rect.h += (50*2) * tt
+
+    color := color::rgb(a, 0.4, 0, a)
+
+    targetImage.blit({0,  0,  16, 16}, {rect.x, rect.y, 16, 16}, color)
+    targetImage.blit({16, 0,  16, 16}, {rect.x+rect.w-16, rect.y, 16, 16}, color)
+    targetImage.blit({0,  16, 16, 16}, {rect.x, rect.y+rect.h-16, 16, 16}, color)
+    targetImage.blit({16, 16, 16, 16}, {rect.x+rect.w-16, rect.y+rect.h-16, 16, 16}, color)
+  }
+
+  targets = newTargets
+}
